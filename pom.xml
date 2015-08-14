@@ -84,20 +84,26 @@
 			<version>2.0.3</version>
 		</dependency>
 		<dependency>
-            <groupId>com.github.rinde</groupId>
-            <artifactId>rinlog</artifactId>
-            <version>${rinlog.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.rinde</groupId>
-            <artifactId>rinsim-scenario-util</artifactId>
-            <version>${rinsim.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.rinde</groupId>
-            <artifactId>datgen</artifactId>
-            <version>${datgen.version}</version>
-        </dependency>
+			<groupId>com.github.rinde</groupId>
+			<artifactId>rinlog</artifactId>
+			<version>${rinlog.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.rinde</groupId>
+			<artifactId>rinsim-scenario-util</artifactId>
+			<version>${rinsim.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.rinde</groupId>
+			<artifactId>datgen</artifactId>
+			<version>${datgen.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.auto.value</groupId>
+			<artifactId>auto-value</artifactId>
+			<scope>provided</scope>
+			<version>1.1</version>
+		</dependency>
 	</dependencies>
 
 </project>
