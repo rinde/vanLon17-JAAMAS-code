@@ -26,7 +26,7 @@ import java.util.Map;
 
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
-import com.github.rinde.rinsim.central.Central;
+import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
@@ -69,7 +69,7 @@ public class PerformExperiment {
         .build(SUM)
         .computeLocal()
         .withRandomSeed(123)
-        .withThreads(4)
+        .withThreads(1)
         .repeat(1)
         .addScenarios(FileProvider.builder()
             .add(Paths.get(DATASET))
@@ -78,13 +78,22 @@ public class PerformExperiment {
         .usePostProcessor(LogProcessor.INSTANCE)
         .addConfiguration(
           MASConfiguration.builder(
-            Central.solverConfiguration(
+            RtCentral.solverConfigurationAdapt(
               Opt2.breadthFirstSupplier(
                 CheapestInsertionHeuristic.supplier(SUM),
                 SUM),
               "CheapInsert"))
               .addModel(RealtimeClockLogger.builder())
-              .build());
+              .build())
+
+    //
+    // .showGui(View.builder()
+    // .withAutoPlay()
+    // .with(PlaneRoadModelRenderer.builder())
+    // .with(RoadUserRenderer.builder())
+    // .with(TimeLinePanel.builder()))
+
+    ;
 
     final Optional<ExperimentResults> results =
       experimentBuilder.perform(System.out, args);
