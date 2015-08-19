@@ -76,10 +76,15 @@ public class PerformExperiment {
             .filter("glob:**[0].scen"))
         .addResultListener(new CommandLineProgress(System.out))
         .usePostProcessor(LogProcessor.INSTANCE)
-        .addConfiguration(Central.solverConfiguration(
-          Opt2.breadthFirstSupplier(CheapestInsertionHeuristic.supplier(SUM),
-            SUM),
-          "CheapInsert"));
+        .addConfiguration(
+          MASConfiguration.builder(
+            Central.solverConfiguration(
+              Opt2.breadthFirstSupplier(
+                CheapestInsertionHeuristic.supplier(SUM),
+                SUM),
+              "CheapInsert"))
+              .addModel(RealtimeClockLogger.builder())
+              .build());
 
     final Optional<ExperimentResults> results =
       experimentBuilder.perform(System.out, args);
