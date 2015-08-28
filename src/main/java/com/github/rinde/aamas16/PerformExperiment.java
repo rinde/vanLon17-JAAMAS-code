@@ -26,6 +26,7 @@ import java.util.Map;
 
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
+import com.github.rinde.rinsim.central.SolverValidator;
 import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
@@ -52,6 +53,8 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 
+import net.openhft.affinity.AffinityLock;
+
 /**
  *
  * @author Rinde van Lon
@@ -69,24 +72,24 @@ public class PerformExperiment {
         .build(SUM)
         .computeLocal()
         .withRandomSeed(123)
-        .withThreads(1)
+        .withThreads(7)
         .repeat(1)
         .addScenarios(FileProvider.builder()
             .add(Paths.get(DATASET))
-            .filter("glob:**[0].scen"))
+            .filter("glob:**5.00-[0].scen"))
         .addResultListener(new CommandLineProgress(System.out))
         .usePostProcessor(LogProcessor.INSTANCE)
         .addConfiguration(
           MASConfiguration.builder(
             RtCentral.solverConfigurationAdapt(
               Opt2.breadthFirstSupplier(
-                CheapestInsertionHeuristic.supplier(SUM),
+                SolverValidator.wrap(
+                  CheapestInsertionHeuristic.supplier(SUM)),
                 SUM),
               "CheapInsert"))
               .addModel(RealtimeClockLogger.builder())
               .build())
 
-    //
     // .showGui(View.builder()
     // .withAutoPlay()
     // .with(PlaneRoadModelRenderer.builder())
@@ -223,6 +226,7 @@ public class PerformExperiment {
 
         System.out.println("Fail: " + args);
         e.printStackTrace();
+        System.out.println(AffinityLock.dumpLocks());
         // System.out.println(Joiner.on("\n").join(
         // sim.getModelProvider().getModel(RealtimeClockLogger.class).getLog()));
         System.out.println("RETRY!");
