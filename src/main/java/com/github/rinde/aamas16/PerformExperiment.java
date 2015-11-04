@@ -24,10 +24,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.github.rinde.logistics.pdptw.mas.TruckFactory;
+import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
+import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
+import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
+import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
-import com.github.rinde.rinsim.central.SolverValidator;
-import com.github.rinde.rinsim.central.rt.RtCentral;
+import com.github.rinde.rinsim.central.rt.RealtimeSolver;
+import com.github.rinde.rinsim.central.rt.RtSolverModel;
+import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
@@ -41,8 +47,10 @@ import com.github.rinde.rinsim.experiment.PostProcessor;
 import com.github.rinde.rinsim.experiment.PostProcessors;
 import com.github.rinde.rinsim.io.FileProvider;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
+import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
+import com.github.rinde.rinsim.util.StochasticSupplier;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -66,36 +74,82 @@ public class PerformExperiment {
   static final String DATASET = "files/dataset/";
   static final String RESULTS = "files/results/";
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
+    final StochasticSupplier<RealtimeSolver> cih =
+      SolverToRealtimeAdapter.create(CheapestInsertionHeuristic.supplier(SUM));
+
+    final StochasticSupplier<RealtimeSolver> opt2 =
+      SolverToRealtimeAdapter.create(Opt2
+          .breadthFirstSupplier(CheapestInsertionHeuristic.supplier(SUM), SUM));
+
+    // final Scenario s =
+    // ScenarioIO.read(Paths.get(DATASET, "0.20-35-1.00-3.scen"));
+    // final List<TimedEvent> events = Scenario.builder(s)
+    // .filterEvents(instanceOf(AddParcelEvent.class)).build()
+    // .getEvents().subList(0, 10);
+    //
+    // s = Scenario.builder(s)
+    // .ensureFrequency(instanceOf(AddVehicleEvent.class), 2)
+    // .filterEvents(not(instanceOf(AddParcelEvent.class)))
+    // .addEvents(events)
+    // .build();
+
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
         .build(SUM)
         .computeLocal()
         .withRandomSeed(123)
-        .withThreads(7)
-        .repeat(1)
+        .withThreads(5)
+        .repeat(10)
+        // .addScenario(s)
         .addScenarios(FileProvider.builder()
             .add(Paths.get(DATASET))
-            .filter("glob:**5.00-[0].scen"))
+            .filter("glob:**-[0].scen"))
         .addResultListener(new CommandLineProgress(System.out))
         .usePostProcessor(LogProcessor.INSTANCE)
-        .addConfiguration(
-          MASConfiguration.builder(
-            RtCentral.solverConfigurationAdapt(
-              Opt2.breadthFirstSupplier(
-                SolverValidator.wrap(
-                  CheapestInsertionHeuristic.supplier(SUM)),
-                SUM),
-              "CheapInsert"))
-              .addModel(RealtimeClockLogger.builder())
-              .build())
+        .addConfiguration(MASConfiguration.pdptwBuilder()
+            .setName("ReAuction-2optRP-cihBID")
+            .addEventHandler(AddVehicleEvent.class, TruckFactory.builder()
+                .setRoutePlanner(RtSolverRoutePlanner.supplier(opt2))
+                .setCommunicator(RtSolverBidder.supplier(SUM, cih))
+                .setLazyComputation(false)
+                .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
+                .build())
+            .addModel(AuctionCommModel.builder(DoubleBid.class))
+            .addModel(RtSolverModel.builder())
+            .addModel(RealtimeClockLogger.builder())
+            .build())
+
+    // .addConfiguration(
+    // MASConfiguration.builder(
+    // RtCentral.solverConfigurationAdapt(
+    // // Opt2.breadthFirstSupplier(
+    // SolverValidator.wrap(
+    // RandomSolver.supplier()
+    // // CheapestInsertionHeuristic.supplier(SUM)),
+    // // SUM),
+    // // "CheapInsert"))
+    // ), "random"))
+    // .addModel(RealtimeClockLogger.builder())
+    // .build())
 
     // .showGui(View.builder()
     // .withAutoPlay()
+    // .withAutoClose()
+    // .withSpeedUp(8)
+    // .withFullScreen()
+    // .withTitleAppendix("AAMAS 2016 Experiment")
+    // .with(RoadUserRenderer.builder()
+    // .withToStringLabel())
+    // .with(RouteRenderer.builder())
+    // .with(PDPModelRenderer.builder())
     // .with(PlaneRoadModelRenderer.builder())
-    // .with(RoadUserRenderer.builder())
-    // .with(TimeLinePanel.builder()))
+    // .with(AuctionPanel.builder())
+    // .with(TimeLinePanel.builder())
+    // .with(RtSolverPanel.builder())
+    // .withResolution(1024, 768)
 
+    // )
     ;
 
     final Optional<ExperimentResults> results =
@@ -229,8 +283,8 @@ public class PerformExperiment {
         System.out.println(AffinityLock.dumpLocks());
         // System.out.println(Joiner.on("\n").join(
         // sim.getModelProvider().getModel(RealtimeClockLogger.class).getLog()));
-        System.out.println("RETRY!");
-        return FailureStrategy.RETRY;
+        // System.out.println("RETRY!");
+        return FailureStrategy.ABORT_EXPERIMENT_RUN;
       }
 
     }
