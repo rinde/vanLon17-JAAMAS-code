@@ -19,10 +19,13 @@ import static java.util.Arrays.asList;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
@@ -35,6 +38,8 @@ import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtSolverModel;
 import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
+import com.github.rinde.rinsim.core.SimulatorAPI;
+import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
 import com.github.rinde.rinsim.experiment.CommandLineProgress;
@@ -46,9 +51,11 @@ import com.github.rinde.rinsim.experiment.MASConfiguration;
 import com.github.rinde.rinsim.experiment.PostProcessor;
 import com.github.rinde.rinsim.experiment.PostProcessors;
 import com.github.rinde.rinsim.io.FileProvider;
+import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
+import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
 import com.github.rinde.rinsim.util.StochasticSupplier;
 import com.google.auto.value.AutoValue;
@@ -130,6 +137,25 @@ public class PerformExperiment {
     // // SUM),
     // // "CheapInsert"))
     // ), "random"))
+    // .addModel(RealtimeClockLogger.builder())
+    // .build())
+
+    // random solver
+    // .addConfiguration(MASConfiguration.builder(
+    // RtCentral.solverConfigurationAdapt(
+    // SolverValidator.wrap(RandomSolver.supplier()), "random"))
+    // .addModel(RealtimeClockLogger.builder())
+    // .addEventHandler(AddParcelEvent.class, new DebugParcelCreator())
+    // .build())
+
+    // 2-opt cheapest insertion
+    // .addConfiguration(MASConfiguration.builder(
+    // RtCentral.solverConfigurationAdapt(
+    // SolverValidator.wrap(
+    // Opt2.breadthFirstSupplier(
+    // CheapestInsertionHeuristic.supplier(SUM),
+    // SUM)),
+    // "2optCheapInsert", true))
     // .addModel(RealtimeClockLogger.builder())
     // .build())
 
@@ -270,6 +296,9 @@ public class PerformExperiment {
 
         final StatisticsDTO stats =
           PostProcessors.statisticsPostProcessor().collectResults(sim, args);
+
+        System.out.println("success: " + args);
+
         return ExperimentInfo.create(logger.getLog(), logger.getRtCount(),
           logger.getStCount(), stats);
       }
@@ -288,5 +317,35 @@ public class PerformExperiment {
       }
 
     }
+  }
+
+  static class DebugParcelCreator
+      implements TimedEventHandler<AddParcelEvent>, Serializable {
+
+    private static final long serialVersionUID = -3604876394924095797L;
+    Map<SimulatorAPI, AtomicLong> map;
+
+    DebugParcelCreator() {
+      map = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    public void handleTimedEvent(AddParcelEvent event, SimulatorAPI simulator) {
+
+      if (!map.containsKey(simulator)) {
+        map.put(simulator, new AtomicLong());
+      }
+      final String str =
+        "p" + Long.toString(map.get(simulator).getAndIncrement());
+
+      simulator.register(new Parcel(event.getParcelDTO()) {
+        @Override
+        public String toString() {
+          return str;
+        }
+      });
+
+    }
+
   }
 }
