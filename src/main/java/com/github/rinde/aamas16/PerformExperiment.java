@@ -34,6 +34,7 @@ import org.joda.time.format.ISODateTimeFormat;
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
+import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
 import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
@@ -141,7 +142,11 @@ public class PerformExperiment {
                   .setLazyComputation(false)
                   .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
                   .build())
-            .addModel(AuctionCommModel.builder(DoubleBid.class))
+            .addModel(AuctionCommModel.builder(DoubleBid.class)
+                .withStopCondition(
+                  AuctionStopConditions.or(
+                    AuctionStopConditions.<DoubleBid>allBidders(),
+                    AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
             .addModel(RtSolverModel.builder())
             .addModel(RealtimeClockLogger.builder())
             .build())
