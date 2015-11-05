@@ -15,6 +15,8 @@
  */
 package com.github.rinde.aamas16;
 
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.base.Predicates.not;
 import static java.util.Arrays.asList;
 
 import java.io.File;
@@ -26,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.joda.time.format.ISODateTimeFormat;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
@@ -51,7 +55,9 @@ import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
 import com.github.rinde.rinsim.experiment.ExperimentResults;
 import com.github.rinde.rinsim.experiment.MASConfiguration;
 import com.github.rinde.rinsim.experiment.PostProcessor;
+import com.github.rinde.rinsim.experiment.PostProcessor.FailureStrategy;
 import com.github.rinde.rinsim.experiment.PostProcessors;
+import com.github.rinde.rinsim.experiment.ResultListener;
 import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
@@ -60,6 +66,7 @@ import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
 import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
 import com.github.rinde.rinsim.scenario.Scenario;
 import com.github.rinde.rinsim.scenario.ScenarioIO;
+import com.github.rinde.rinsim.scenario.TimedEvent;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
 import com.github.rinde.rinsim.ui.View;
@@ -98,17 +105,17 @@ public class PerformExperiment {
       SolverToRealtimeAdapter.create(Opt2
           .breadthFirstSupplier(CheapestInsertionHeuristic.supplier(SUM), SUM));
 
-    final Scenario s =
-      ScenarioIO.read(Paths.get(DATASET, "0.80-5-5.00-0.scen"));
+    Scenario s =
+      ScenarioIO.read(Paths.get(DATASET, "0.80-5-1.00-0.scen"));
 
-    // final List<TimedEvent> events = Scenario.builder(s)
-    // .filterEvents(instanceOf(AddParcelEvent.class)).build()
-    // .getEvents().subList(0, 10);
-    // s = Scenario.builder(s)
-    // // .ensureFrequency(instanceOf(AddVehicleEvent.class), 2)
-    // .filterEvents(not(instanceOf(AddParcelEvent.class)))
-    // .addEvents(events)
-    // .build();
+    final List<TimedEvent> events = Scenario.builder(s)
+        .filterEvents(instanceOf(AddParcelEvent.class)).build()
+        .getEvents().subList(0, 10);
+    s = Scenario.builder(s)
+        // .ensureFrequency(instanceOf(AddVehicleEvent.class), 2)
+        .filterEvents(not(instanceOf(AddParcelEvent.class)))
+        .addEvents(events)
+        .build();
 
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
@@ -118,6 +125,8 @@ public class PerformExperiment {
         .withThreads(1)
         .repeat(10)
         .addScenario(s)
+        .addResultListener(new IncrementalResultWriter(new File(RESULTS)))
+
         // .addScenarios(FileProvider.builder()
         // .add(Paths.get(DATASET))
         // .filter("glob:**-[0].scen"))
@@ -207,77 +216,94 @@ public class PerformExperiment {
       final Collection<SimulationResult> group = groupedResults.get(config);
 
       final File configResult = new File(RESULTS + config.getName() + ".csv");
-      try {
-        Files.createParentDirs(configResult);
-      } catch (final IOException e1) {
-        throw new IllegalStateException(e1);
-      }
+
       // deletes the file in case it already exists
       configResult.delete();
-      try {
-        Files
-            .append(
-              "dynamism,urgency,scale,cost,travel_time,tardiness,over_time,is_valid,scenario_id,random_seed,comp_time,num_vehicles,num_orders\n",
-              configResult,
-              Charsets.UTF_8);
-      } catch (final IOException e1) {
-        throw new IllegalStateException(e1);
-      }
+      createCSVWithHeader(configResult);
 
       for (final SimulationResult sr : group) {
-        final String pc = sr.getSimArgs().getScenario().getProblemClass()
-            .getId();
-        final String id = sr.getSimArgs().getScenario().getProblemInstanceId();
-        final int numVehicles = FluentIterable
-            .from(sr.getSimArgs().getScenario().getEvents())
-            .filter(AddVehicleEvent.class).size();
-        try {
-          final String scenarioName = Joiner.on("-").join(pc, id);
-          final List<String> propsStrings = Files.readLines(new File(
-              DATASET + scenarioName + ".properties"),
-            Charsets.UTF_8);
-          final Map<String, String> properties = Splitter.on("\n")
-              .withKeyValueSeparator(" = ")
-              .split(Joiner.on("\n").join(propsStrings));
-
-          final double dynamism = Double.parseDouble(properties
-              .get("dynamism_bin"));
-          final long urgencyMean = Long.parseLong(properties.get("urgency"));
-          final double scale = Double.parseDouble(properties.get("scale"));
-
-          final ExperimentInfo ei = (ExperimentInfo) sr.getResultObject();
-          final StatisticsDTO stats = ei.getStats();
-
-          // final StatisticsDTO stats = (StatisticsDTO) sr.getResultObject();
-          final double cost = SUM.computeCost(stats);
-          final double travelTime = SUM.travelTime(stats);
-          final double tardiness = SUM.tardiness(stats);
-          final double overTime = SUM.overTime(stats);
-          final boolean isValidResult = SUM.isValidResult(stats);
-          final long computationTime = stats.computationTime;
-
-          final long numOrders =
-            Long.parseLong(properties.get("AddParcelEvent"));
-
-          final String line = Joiner.on(",")
-              .appendTo(new StringBuilder(),
-                asList(dynamism, urgencyMean, scale, cost, travelTime,
-                  tardiness, overTime, isValidResult, scenarioName,
-                  sr.getSimArgs().getRandomSeed(),
-                  computationTime, numVehicles, numOrders))
-              .append(System.lineSeparator())
-              .toString();
-          if (!isValidResult) {
-            System.err.println("WARNING: FOUND AN INVALID RESULT: ");
-            System.err.println(line);
-          }
-          Files.append(line, configResult, Charsets.UTF_8);
-        } catch (final IOException e) {
-          throw new IllegalStateException(e);
-        }
+        appendSimResult(sr, configResult);
       }
     }
 
+  }
+
+  static void createCSVWithHeader(File f) {
+    try {
+      Files.createParentDirs(f);
+      Files.append(
+        "dynamism,urgency,scale,cost,travel_time,tardiness,over_time,is_valid,"
+            + "scenario_id,random_seed,comp_time,num_vehicles,num_orders\n",
+        f,
+        Charsets.UTF_8);
+    } catch (final IOException e1) {
+      throw new IllegalStateException(e1);
+    }
+  }
+
+  static void appendSimResult(SimulationResult sr, File destFile) {
+    final String pc = sr.getSimArgs().getScenario().getProblemClass()
+        .getId();
+    final String id = sr.getSimArgs().getScenario().getProblemInstanceId();
+    final int numVehicles = FluentIterable
+        .from(sr.getSimArgs().getScenario().getEvents())
+        .filter(AddVehicleEvent.class).size();
+    try {
+      final String scenarioName = Joiner.on("-").join(pc, id);
+      final List<String> propsStrings = Files.readLines(new File(
+          DATASET + scenarioName + ".properties"),
+        Charsets.UTF_8);
+      final Map<String, String> properties = Splitter.on("\n")
+          .withKeyValueSeparator(" = ")
+          .split(Joiner.on("\n").join(propsStrings));
+
+      final double dynamism = Double.parseDouble(properties
+          .get("dynamism_bin"));
+      final long urgencyMean = Long.parseLong(properties.get("urgency"));
+      final double scale = Double.parseDouble(properties.get("scale"));
+
+      final long numOrders =
+        Long.parseLong(properties.get("AddParcelEvent"));
+
+      if (sr.getResultObject() instanceof FailureStrategy) {
+        final String line = Joiner.on(",")
+            .appendTo(new StringBuilder(),
+              asList(dynamism, urgencyMean, scale, -1, -1, -1, -1, false,
+                scenarioName, sr.getSimArgs().getRandomSeed(), -1, numVehicles,
+                numOrders))
+            .append(System.lineSeparator())
+            .toString();
+        Files.append(line, destFile, Charsets.UTF_8);
+      } else {
+
+        final ExperimentInfo ei = (ExperimentInfo) sr.getResultObject();
+        final StatisticsDTO stats = ei.getStats();
+
+        // final StatisticsDTO stats = (StatisticsDTO) sr.getResultObject();
+        final double cost = SUM.computeCost(stats);
+        final double travelTime = SUM.travelTime(stats);
+        final double tardiness = SUM.tardiness(stats);
+        final double overTime = SUM.overTime(stats);
+        final boolean isValidResult = SUM.isValidResult(stats);
+        final long computationTime = stats.computationTime;
+
+        final String line = Joiner.on(",")
+            .appendTo(new StringBuilder(),
+              asList(dynamism, urgencyMean, scale, cost, travelTime,
+                tardiness, overTime, isValidResult, scenarioName,
+                sr.getSimArgs().getRandomSeed(),
+                computationTime, numVehicles, numOrders))
+            .append(System.lineSeparator())
+            .toString();
+        if (!isValidResult) {
+          System.err.println("WARNING: FOUND AN INVALID RESULT: ");
+          System.err.println(line);
+        }
+        Files.append(line, destFile, Charsets.UTF_8);
+      }
+    } catch (final IOException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @AutoValue
@@ -294,6 +320,37 @@ public class PerformExperiment {
         StatisticsDTO stats) {
       return new AutoValue_PerformExperiment_ExperimentInfo(log, rt, st, stats);
     }
+  }
+
+  static class IncrementalResultWriter implements ResultListener {
+    final File experimentDirectory;
+
+    public IncrementalResultWriter(File target) {
+      final String timestamp = ISODateTimeFormat.dateHourMinuteSecond()
+          .print(System.currentTimeMillis());
+      experimentDirectory = new File(target, timestamp);
+      experimentDirectory.mkdirs();
+    }
+
+    @Override
+    public void startComputing(int numberOfSimulations) {}
+
+    @Override
+    public void receive(SimulationResult result) {
+
+      final File targetFile = new File(experimentDirectory,
+          result.getSimArgs().getMasConfig().getName() + ".csv");
+
+      if (!targetFile.exists()) {
+        createCSVWithHeader(targetFile);
+      }
+
+      appendSimResult(result, targetFile);
+    }
+
+    @Override
+    public void doneComputing() {}
+
   }
 
   enum LogProcessor implements PostProcessor<ExperimentInfo> {
@@ -322,7 +379,7 @@ public class PerformExperiment {
         // System.out.println(Joiner.on("\n").join(
         // sim.getModelProvider().getModel(RealtimeClockLogger.class).getLog()));
         // System.out.println("RETRY!");
-        return FailureStrategy.ABORT_EXPERIMENT_RUN;
+        return FailureStrategy.RETRY;
       }
 
     }
