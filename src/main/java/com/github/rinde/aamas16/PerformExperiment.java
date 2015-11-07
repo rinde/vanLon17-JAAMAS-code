@@ -15,8 +15,6 @@
  */
 package com.github.rinde.aamas16;
 
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.base.Predicates.not;
 import static java.util.Arrays.asList;
 
 import java.io.File;
@@ -33,7 +31,6 @@ import org.joda.time.format.ISODateTimeFormat;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
-import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
@@ -42,13 +39,13 @@ import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtSolverModel;
-import com.github.rinde.rinsim.central.rt.RtSolverPanel;
 import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.SimulatorAPI;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
+import com.github.rinde.rinsim.core.model.time.TimeModel;
 import com.github.rinde.rinsim.experiment.CommandLineProgress;
 import com.github.rinde.rinsim.experiment.Experiment;
 import com.github.rinde.rinsim.experiment.Experiment.SimArgs;
@@ -59,24 +56,19 @@ import com.github.rinde.rinsim.experiment.PostProcessor;
 import com.github.rinde.rinsim.experiment.PostProcessor.FailureStrategy;
 import com.github.rinde.rinsim.experiment.PostProcessors;
 import com.github.rinde.rinsim.experiment.ResultListener;
+import com.github.rinde.rinsim.io.FileProvider;
 import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
-import com.github.rinde.rinsim.pdptw.common.RouteRenderer;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
-import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
 import com.github.rinde.rinsim.scenario.Scenario;
 import com.github.rinde.rinsim.scenario.ScenarioIO;
-import com.github.rinde.rinsim.scenario.TimedEvent;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
-import com.github.rinde.rinsim.ui.View;
-import com.github.rinde.rinsim.ui.renderers.PDPModelRenderer;
-import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
-import com.github.rinde.rinsim.ui.renderers.RoadUserRenderer;
 import com.github.rinde.rinsim.util.StochasticSupplier;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Charsets;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
@@ -103,34 +95,41 @@ public class PerformExperiment {
       SolverToRealtimeAdapter.create(CheapestInsertionHeuristic.supplier(SUM));
 
     final StochasticSupplier<RealtimeSolver> opt2 =
-      SolverToRealtimeAdapter.create(Opt2
-          .breadthFirstSupplier(CheapestInsertionHeuristic.supplier(SUM), SUM));
+      SolverToRealtimeAdapter.create(
+        Opt2.breadthFirstSupplier(
+          CheapestInsertionHeuristic.supplier(SUM), SUM));
 
-    Scenario s =
-      ScenarioIO.read(Paths.get(DATASET, "0.80-5-1.00-0.scen"));
+    // Scenario s =
+    // ScenarioIO.read(Paths.get(DATASET, "0.80-5-10.00-0.scen"));
+    //
+    // s = Scenario.builder(s)
+    // .removeModelsOfType(TimeModel.AbstractBuilder.class)
+    // .addModel(TimeModel.builder()
+    // .withRealTime()
+    // .withTickLength(250))
+    // .build();
 
-    final List<TimedEvent> events = Scenario.builder(s)
-        .filterEvents(instanceOf(AddParcelEvent.class)).build()
-        .getEvents().subList(0, 10);
-    s = Scenario.builder(s)
-        // .ensureFrequency(instanceOf(AddVehicleEvent.class), 2)
-        .filterEvents(not(instanceOf(AddParcelEvent.class)))
-        .addEvents(events)
-        .build();
+    // final List<TimedEvent> events = Scenario.builder(s)
+    // .filterEvents(instanceOf(AddParcelEvent.class)).build()
+    // .getEvents().subList(0, 10);
+    // s = Scenario.builder(s)
+    // // .ensureFrequency(instanceOf(AddVehicleEvent.class), 2)
+    // .filterEvents(not(instanceOf(AddParcelEvent.class)))
+    // .addEvents(events)
+    // .build();
 
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
         .build(SUM)
         .computeLocal()
         .withRandomSeed(123)
-        .withThreads(1)
-        .repeat(10)
-        .addScenario(s)
+        .withThreads(11)
+        // .repeat(10)
         .addResultListener(new IncrementalResultWriter(new File(RESULTS)))
-
-        // .addScenarios(FileProvider.builder()
-        // .add(Paths.get(DATASET))
-        // .filter("glob:**-[0].scen"))
+        .setScenarioReader(ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
+        .addScenarios(FileProvider.builder()
+            .add(Paths.get(DATASET))
+            .filter("glob:**-10.00-[0-4].scen"))
         .addResultListener(new CommandLineProgress(System.out))
         .usePostProcessor(LogProcessor.INSTANCE)
         .addConfiguration(MASConfiguration.pdptwBuilder()
@@ -144,62 +143,66 @@ public class PerformExperiment {
                   .build())
             .addModel(AuctionCommModel.builder(DoubleBid.class)
                 .withStopCondition(
-                  AuctionStopConditions.or(
-                    AuctionStopConditions.<DoubleBid>allBidders(),
-                    AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
-            .addModel(RtSolverModel.builder())
+                  AuctionStopConditions.and(
+                    AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+                    AuctionStopConditions.or(
+                      AuctionStopConditions.<DoubleBid>allBidders(),
+                      AuctionStopConditions
+                          .<DoubleBid>maxAuctionDuration(5000)))))
+            .addModel(RtSolverModel.builder()
+                .withThreadPoolSize(3)
+                .withThreadGrouping(true))
             .addModel(RealtimeClockLogger.builder())
             .build())
 
-        // .addConfiguration(
-        // MASConfiguration.builder(
-        // RtCentral.solverConfigurationAdapt(
-        // // Opt2.breadthFirstSupplier(
-        // SolverValidator.wrap(
-        // RandomSolver.supplier()
-        // // CheapestInsertionHeuristic.supplier(SUM)),
-        // // SUM),
-        // // "CheapInsert"))
-        // ), "random"))
-        // .addModel(RealtimeClockLogger.builder())
-        // .build())
+    // .addConfiguration(
+    // MASConfiguration.builder(
+    // RtCentral.solverConfigurationAdapt(
+    // // Opt2.breadthFirstSupplier(
+    // SolverValidator.wrap(
+    // RandomSolver.supplier()
+    // // CheapestInsertionHeuristic.supplier(SUM)),
+    // // SUM),
+    // // "CheapInsert"))
+    // ), "random"))
+    // .addModel(RealtimeClockLogger.builder())
+    // .build())
 
-        // random solver
-        // .addConfiguration(MASConfiguration.builder(
-        // RtCentral.solverConfigurationAdapt(
-        // SolverValidator.wrap(RandomSolver.supplier()), "random"))
-        // .addModel(RealtimeClockLogger.builder())
-        // .addEventHandler(AddParcelEvent.class, new DebugParcelCreator())
-        // .build())
+    // random solver
+    // .addConfiguration(MASConfiguration.builder(
+    // RtCentral.solverConfigurationAdapt(
+    // SolverValidator.wrap(RandomSolver.supplier()), "random"))
+    // .addModel(RealtimeClockLogger.builder())
+    // .addEventHandler(AddParcelEvent.class, new DebugParcelCreator())
+    // .build())
 
-        // 2-opt cheapest insertion
-        // .addConfiguration(MASConfiguration.builder(
-        // RtCentral.solverConfigurationAdapt(
-        // SolverValidator.wrap(
-        // Opt2.breadthFirstSupplier(
-        // CheapestInsertionHeuristic.supplier(SUM),
-        // SUM)),
-        // "2optCheapInsert", true))
-        // .addModel(RealtimeClockLogger.builder())
-        // .build())
+    // 2-opt cheapest insertion
+    // .addConfiguration(MASConfiguration.builder(
+    // RtCentral.solverConfigurationAdapt(
+    // SolverValidator.wrap(
+    // Opt2.breadthFirstSupplier(
+    // CheapestInsertionHeuristic.supplier(SUM),
+    // SUM)),
+    // "2optCheapInsert", true))
+    // .addModel(RealtimeClockLogger.builder())
+    // .build())
 
-        .showGui(View.builder()
-            .withAutoPlay()
-            .withAutoClose()
-            .withSpeedUp(8)
-            // .withFullScreen()
-            .withTitleAppendix("AAMAS 2016 Experiment")
-            .with(RoadUserRenderer.builder()
-                .withToStringLabel())
-            .with(RouteRenderer.builder())
-            .with(PDPModelRenderer.builder())
-            .with(PlaneRoadModelRenderer.builder())
-            .with(AuctionPanel.builder())
-            .with(TimeLinePanel.builder())
-            .with(RtSolverPanel.builder())
-            .withResolution(1280, 1024)
-
-    );
+    // .showGui(View.builder()
+    // .withAutoPlay()
+    // .withAutoClose()
+    // .withSpeedUp(8)
+    // // .withFullScreen()
+    // .withTitleAppendix("AAMAS 2016 Experiment")
+    // .with(RoadUserRenderer.builder()
+    // .withToStringLabel())
+    // .with(RouteRenderer.builder())
+    // .with(PDPModelRenderer.builder())
+    // .with(PlaneRoadModelRenderer.builder())
+    // .with(AuctionPanel.builder())
+    // .with(TimeLinePanel.builder())
+    // .with(RtSolverPanel.builder())
+    // .withResolution(1280, 1024))
+    ;
 
     final Optional<ExperimentResults> results =
       experimentBuilder.perform(System.out, args);
@@ -231,6 +234,20 @@ public class PerformExperiment {
       }
     }
 
+  }
+
+  enum ScenarioConverter implements Function<Scenario, Scenario> {
+    INSTANCE {
+      @Override
+      public Scenario apply(Scenario input) {
+        return Scenario.builder(input)
+            .removeModelsOfType(TimeModel.AbstractBuilder.class)
+            .addModel(TimeModel.builder()
+                .withRealTime()
+                .withTickLength(250))
+            .build();
+      }
+    }
   }
 
   static void createCSVWithHeader(File f) {
@@ -384,7 +401,7 @@ public class PerformExperiment {
         // System.out.println(Joiner.on("\n").join(
         // sim.getModelProvider().getModel(RealtimeClockLogger.class).getLog()));
         // System.out.println("RETRY!");
-        return FailureStrategy.RETRY;
+        return FailureStrategy.ABORT_EXPERIMENT_RUN;
       }
 
     }
