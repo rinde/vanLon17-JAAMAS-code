@@ -23,7 +23,7 @@
 	<logger name="com.github.rinde.rinsim" level="TRACE" />
 	<logger name="com.github.rinde.rinsim.central.rt" level="TRACE" />
 	<logger name="com.github.rinde.rinsim.core.model.time" level="TRACE" />
-	<logger name="com.github.rinde.rinsim.scenario" level="TRACE" />
+	<logger name="com.github.rinde.rinsim.scenario" level="INFO" />
 	<logger name="com.github.rinde.logistics" level="TRACE" />
 
 	<root level="INFO">
