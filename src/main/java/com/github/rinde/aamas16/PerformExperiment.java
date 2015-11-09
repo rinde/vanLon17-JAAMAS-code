@@ -34,6 +34,7 @@ import org.joda.time.format.ISODateTimeFormat;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
+import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
@@ -43,6 +44,7 @@ import com.github.rinde.logistics.pdptw.solver.Opt2;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.central.rt.RtSolverModel;
+import com.github.rinde.rinsim.central.rt.RtSolverPanel;
 import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.SimulatorAPI;
@@ -64,12 +66,18 @@ import com.github.rinde.rinsim.io.FileProvider;
 import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
+import com.github.rinde.rinsim.pdptw.common.RouteRenderer;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
+import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
 import com.github.rinde.rinsim.scenario.Scenario;
 import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.scenario.StopConditions;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
+import com.github.rinde.rinsim.ui.View;
+import com.github.rinde.rinsim.ui.renderers.PDPModelRenderer;
+import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
+import com.github.rinde.rinsim.ui.renderers.RoadUserRenderer;
 import com.github.rinde.rinsim.util.StochasticSupplier;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Charsets;
@@ -189,22 +197,21 @@ public class PerformExperiment {
             "2optCheapInsert", true))
             .build())
 
-    // .showGui(View.builder()
-    // .withAutoPlay()
-    // .withAutoClose()
-    // .withSpeedUp(8)
-    // // .withFullScreen()
-    // .withTitleAppendix("AAMAS 2016 Experiment")
-    // .with(RoadUserRenderer.builder()
-    // .withToStringLabel())
-    // .with(RouteRenderer.builder())
-    // .with(PDPModelRenderer.builder())
-    // .with(PlaneRoadModelRenderer.builder())
-    // .with(AuctionPanel.builder())
-    // .with(TimeLinePanel.builder())
-    // .with(RtSolverPanel.builder())
-    // .withResolution(1280, 1024))
-    ;
+        .showGui(View.builder()
+            .withAutoPlay()
+            .withAutoClose()
+            .withSpeedUp(8)
+            // .withFullScreen()
+            .withTitleAppendix("AAMAS 2016 Experiment")
+            .with(RoadUserRenderer.builder()
+                .withToStringLabel())
+            .with(RouteRenderer.builder())
+            .with(PDPModelRenderer.builder())
+            .with(PlaneRoadModelRenderer.builder())
+            .with(AuctionPanel.builder())
+            .with(TimeLinePanel.builder())
+            .with(RtSolverPanel.builder())
+            .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
       experimentBuilder.perform(System.out, args);

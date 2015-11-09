@@ -20,16 +20,16 @@
 	</appender>
 
 	<!-- suppress RinSim logs -->
-	<logger name="com.github.rinde.rinsim" level="TRACE" />
-	<logger name="com.github.rinde.rinsim.central.rt" level="TRACE" />
-	<logger name="com.github.rinde.rinsim.core.model.time" level="TRACE" />
-	<logger name="com.github.rinde.rinsim.scenario" level="INFO" />
-	<logger name="com.github.rinde.logistics" level="TRACE" />
+	<logger name="com.github.rinde.rinsim" level="WARN" />
+	<logger name="com.github.rinde.rinsim.central.rt" level="WARN" />
+	<logger name="com.github.rinde.rinsim.core.model.time" level="WARN" />
+	<logger name="com.github.rinde.rinsim.scenario" level="WARN" />
+	<logger name="com.github.rinde.logistics" level="WARN" />
 
 	<root level="INFO">
 		<appender-ref ref="STDOUT" />
 	</root>
-	<root level="INFO">
+	<!-- <root level="INFO">
 		<appender-ref ref="FILE" />
-	</root>
+	</root> -->
 </configuration>
