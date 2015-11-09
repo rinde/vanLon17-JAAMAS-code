@@ -67,6 +67,7 @@ import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
 import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
 import com.github.rinde.rinsim.scenario.Scenario;
 import com.github.rinde.rinsim.scenario.ScenarioIO;
+import com.github.rinde.rinsim.scenario.StopConditions;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
 import com.github.rinde.rinsim.ui.View;
@@ -252,6 +253,9 @@ public class PerformExperiment {
             .addModel(TimeModel.builder()
                 .withRealTime()
                 .withTickLength(250))
+            .setStopCondition(
+              StopConditions.or(input.getStopCondition(),
+                StopConditions.limitedTime(6 * 60 * 60 * 1000)))
             .build();
       }
     }
