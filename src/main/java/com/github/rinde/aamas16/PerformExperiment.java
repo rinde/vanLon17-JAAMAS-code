@@ -15,6 +15,7 @@
  */
 package com.github.rinde.aamas16;
 
+import static com.google.common.base.Verify.verifyNotNull;
 import static java.util.Arrays.asList;
 
 import java.io.File;
@@ -26,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.annotation.Nullable;
 
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -164,53 +167,53 @@ public class PerformExperiment {
             .addModel(RealtimeClockLogger.builder())
             .build())
 
-        // .addConfiguration(
-        // MASConfiguration.builder(
-        // RtCentral.solverConfigurationAdapt(
-        // // Opt2.breadthFirstSupplier(
-        // SolverValidator.wrap(
-        // RandomSolver.supplier()
-        // // CheapestInsertionHeuristic.supplier(SUM)),
-        // // SUM),
-        // // "CheapInsert"))
-        // ), "random"))
-        // .addModel(RealtimeClockLogger.builder())
-        // .build())
+    // .addConfiguration(
+    // MASConfiguration.builder(
+    // RtCentral.solverConfigurationAdapt(
+    // // Opt2.breadthFirstSupplier(
+    // SolverValidator.wrap(
+    // RandomSolver.supplier()
+    // // CheapestInsertionHeuristic.supplier(SUM)),
+    // // SUM),
+    // // "CheapInsert"))
+    // ), "random"))
+    // .addModel(RealtimeClockLogger.builder())
+    // .build())
 
-        // random solver
-        // .addConfiguration(MASConfiguration.builder(
-        // RtCentral.solverConfigurationAdapt(
-        // SolverValidator.wrap(RandomSolver.supplier()), "random"))
-        // .addModel(RealtimeClockLogger.builder())
-        // .addEventHandler(AddParcelEvent.class, new DebugParcelCreator())
-        // .build())
+    // random solver
+    // .addConfiguration(MASConfiguration.builder(
+    // RtCentral.solverConfigurationAdapt(
+    // SolverValidator.wrap(RandomSolver.supplier()), "random"))
+    // .addModel(RealtimeClockLogger.builder())
+    // .addEventHandler(AddParcelEvent.class, new DebugParcelCreator())
+    // .build())
 
-        // 2-opt cheapest insertion
-        // .addConfiguration(MASConfiguration.builder(
-        // RtCentral.solverConfigurationAdapt(
-        // SolverValidator.wrap(
-        // Opt2.breadthFirstSupplier(
-        // CheapestInsertionHeuristic.supplier(SUM),
-        // SUM)),
-        // "2optCheapInsert", true))
-        // .addModel(RealtimeClockLogger.builder())
-        // .build())
+    // 2-opt cheapest insertion
+    // .addConfiguration(MASConfiguration.builder(
+    // RtCentral.solverConfigurationAdapt(
+    // SolverValidator.wrap(
+    // Opt2.breadthFirstSupplier(
+    // CheapestInsertionHeuristic.supplier(SUM),
+    // SUM)),
+    // "2optCheapInsert", true))
+    // .addModel(RealtimeClockLogger.builder())
+    // .build())
 
-        .showGui(View.builder()
-            .withAutoPlay()
-            .withAutoClose()
-            .withSpeedUp(8)
-            // .withFullScreen()
-            .withTitleAppendix("AAMAS 2016 Experiment")
-            .with(RoadUserRenderer.builder()
-                .withToStringLabel())
-            .with(RouteRenderer.builder())
-            .with(PDPModelRenderer.builder())
-            .with(PlaneRoadModelRenderer.builder())
-            .with(AuctionPanel.builder())
-            .with(TimeLinePanel.builder())
-            .with(RtSolverPanel.builder())
-            .withResolution(1280, 1024));
+    .showGui(View.builder()
+        .withAutoPlay()
+        .withAutoClose()
+        .withSpeedUp(8)
+        // .withFullScreen()
+        .withTitleAppendix("AAMAS 2016 Experiment")
+        .with(RoadUserRenderer.builder()
+            .withToStringLabel())
+        .with(RouteRenderer.builder())
+        .with(PDPModelRenderer.builder())
+        .with(PlaneRoadModelRenderer.builder())
+        .with(AuctionPanel.builder())
+        .with(TimeLinePanel.builder())
+        .with(RtSolverPanel.builder())
+        .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
       experimentBuilder.perform(System.out, args);
@@ -247,14 +250,15 @@ public class PerformExperiment {
   enum ScenarioConverter implements Function<Scenario, Scenario> {
     INSTANCE {
       @Override
-      public Scenario apply(Scenario input) {
-        return Scenario.builder(input)
+      public Scenario apply(@Nullable Scenario input) {
+        final Scenario s = verifyNotNull(input);
+        return Scenario.builder(s)
             .removeModelsOfType(TimeModel.AbstractBuilder.class)
             .addModel(TimeModel.builder()
                 .withRealTime()
                 .withTickLength(250))
             .setStopCondition(
-              StopConditions.or(input.getStopCondition(),
+              StopConditions.or(s.getStopCondition(),
                 StopConditions.limitedTime(6 * 60 * 60 * 1000)))
             .build();
       }
