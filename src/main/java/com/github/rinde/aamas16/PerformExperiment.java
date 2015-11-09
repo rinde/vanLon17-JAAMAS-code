@@ -195,6 +195,7 @@ public class PerformExperiment {
             Opt2.breadthFirstSupplier(
               CheapestInsertionHeuristic.supplier(SUM), SUM),
             "2optCheapInsert", true))
+            .addModel(RealtimeClockLogger.builder())
             .build())
 
         .showGui(View.builder()
