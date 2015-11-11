@@ -145,7 +145,8 @@ public class PerformExperiment {
         // GENDREAU SCENARIOS
         .addScenarios(FileProvider.builder()
             .add(Paths.get("files/gendreau2006/requests"))
-            .filter("glob:**req_rapide_1_240_24"))
+    // .filter("glob:**req_rapide_1_240_24")
+    )
         .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
           Gendreau06Parser.reader()))
         // DYN-URG-SCL SCENARIOS
