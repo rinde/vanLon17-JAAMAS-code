@@ -49,6 +49,7 @@ import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.SimulatorAPI;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
+import com.github.rinde.rinsim.core.model.time.MeasuredDeviation;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
 import com.github.rinde.rinsim.core.model.time.TimeModel;
@@ -88,6 +89,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
@@ -145,8 +147,7 @@ public class PerformExperiment {
         // GENDREAU SCENARIOS
         .addScenarios(FileProvider.builder()
             .add(Paths.get("files/gendreau2006/requests"))
-    // .filter("glob:**req_rapide_1_240_24")
-    )
+            .filter("glob:**req_rapide_1_240_24"))
         .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
           Gendreau06Parser.reader()))
         // DYN-URG-SCL SCENARIOS
@@ -211,7 +212,7 @@ public class PerformExperiment {
           RtCentral.solverConfigurationAdapt(
             Opt2.breadthFirstSupplier(
               CheapestInsertionHeuristic.supplier(SUM), SUM),
-            "2optCheapInsert", true))
+            "", true))
             .addModel(RealtimeClockLogger.builder())
             .build())
 
@@ -251,16 +252,73 @@ public class PerformExperiment {
       final Collection<SimulationResult> group = groupedResults.get(config);
 
       final File configResult = new File(RESULTS + config.getName() + ".csv");
+      final File timeLogResult =
+        new File(RESULTS + config.getName() + "-timelog.csv");
 
       // deletes the file in case it already exists
       configResult.delete();
+      timeLogResult.delete();
       createCSVWithHeader(configResult);
-
+      createTimeLogHeader(timeLogResult);
       for (final SimulationResult sr : group) {
         appendSimResult(sr, configResult);
+
+        timeLog(sr, timeLogResult);
       }
+
     }
 
+  }
+
+  static void createTimeLogHeader(File target) {
+    try {
+      Files.append(Joiner.on(',').join(
+        "problem-class",
+        "instance",
+        "config",
+        "measured-deviations",
+        "sum-deviations",
+        "avg-deviation",
+        "sum-correction",
+        "avg-correction",
+        "rt-count",
+        "st-count\n"), target, Charsets.UTF_8);
+    } catch (final IOException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  static void timeLog(SimulationResult sr, File target) {
+
+    if (sr.getResultObject() instanceof ExperimentInfo) {
+
+      final ExperimentInfo info = (ExperimentInfo) sr.getResultObject();
+
+      final int totalMeasuredDeviations = info.getMeasuredDeviations().size();
+      long sumDeviationNs = 0;
+      long sumCorrectionNs = 0;
+      for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
+        sumDeviationNs += md.getDeviationNs();
+        sumCorrectionNs += md.getCorrectionNs();
+      }
+
+      try {
+        Files.append(Joiner.on(',').join(
+          sr.getSimArgs().getScenario().getProblemClass().getId(),
+          sr.getSimArgs().getScenario().getProblemInstanceId(),
+          sr.getSimArgs().getMasConfig().getName(),
+          totalMeasuredDeviations,
+          sumDeviationNs,
+          sumDeviationNs / totalMeasuredDeviations,
+          sumCorrectionNs,
+          sumCorrectionNs / totalMeasuredDeviations,
+          info.getRtCount(),
+          info.getStCount() + "\n"), target, Charsets.UTF_8);
+      } catch (final IOException e) {
+        throw new IllegalStateException(e);
+      }
+
+    }
   }
 
   enum ScenarioConverter implements Function<Scenario, Scenario> {
@@ -270,13 +328,9 @@ public class PerformExperiment {
         final Scenario s = verifyNotNull(input);
         return Scenario.builder(s)
             .removeModelsOfType(TimeModel.AbstractBuilder.class)
-            .addModel(TimeModel.builder()
-                .withRealTime()
-                .withTickLength(250))
-            .setStopCondition(
-              StopConditions.or(s.getStopCondition(),
-                StopConditions
-                    .limitedTime(10 * 60 * 60 * 1000)))
+            .addModel(TimeModel.builder().withRealTime().withTickLength(250))
+            .setStopCondition(StopConditions.or(s.getStopCondition(),
+              StopConditions.limitedTime(10 * 60 * 60 * 1000)))
             .build();
       }
     }
@@ -410,9 +464,12 @@ public class PerformExperiment {
 
     abstract StatisticsDTO getStats();
 
+    abstract ImmutableList<MeasuredDeviation> getMeasuredDeviations();
+
     static ExperimentInfo create(List<LogEntry> log, long rt, long st,
-        StatisticsDTO stats) {
-      return new AutoValue_PerformExperiment_ExperimentInfo(log, rt, st, stats);
+        StatisticsDTO stats, ImmutableList<MeasuredDeviation> dev) {
+      return new AutoValue_PerformExperiment_ExperimentInfo(log, rt, st, stats,
+          dev);
     }
   }
 
@@ -467,13 +524,15 @@ public class PerformExperiment {
         final RealtimeClockLogger logger =
           sim.getModelProvider().getModel(RealtimeClockLogger.class);
 
+        // logger.getDeviations()
+
         final StatisticsDTO stats =
           PostProcessors.statisticsPostProcessor().collectResults(sim, args);
 
         System.out.println("success: " + args);
 
         return ExperimentInfo.create(logger.getLog(), logger.getRtCount(),
-          logger.getStCount(), stats);
+          logger.getStCount(), stats, logger.getDeviations());
       }
 
       @Override
