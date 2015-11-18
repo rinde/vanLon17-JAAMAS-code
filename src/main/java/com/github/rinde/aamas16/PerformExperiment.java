@@ -19,6 +19,7 @@ import static com.google.common.base.Verify.verifyNotNull;
 import static java.util.Arrays.asList;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Paths;
@@ -90,6 +91,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
@@ -101,8 +103,8 @@ import net.openhft.affinity.AffinityLock;
  * @author Rinde van Lon
  */
 public class PerformExperiment {
-  static final Gendreau06ObjectiveFunction SUM = Gendreau06ObjectiveFunction
-      .instance();
+  static final Gendreau06ObjectiveFunction SUM =
+    Gendreau06ObjectiveFunction.instance();
 
   static final String DATASET = "files/dataset/";
   static final String RESULTS = "files/results/";
@@ -134,15 +136,16 @@ public class PerformExperiment {
     // .filterEvents(not(instanceOf(AddParcelEvent.class)))
     // .addEvents(events)
     // .build();
+    final File experimentDir = createExperimentDir(new File(RESULTS));
 
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
         .build(SUM)
         .computeLocal()
         .withRandomSeed(123)
-        .withThreads(11)
+        .withThreads(1)
         // .repeat(10)
-        .addResultListener(new IncrementalResultWriter(new File(RESULTS)))
+        .addResultListener(new IncrementalResultWriter(experimentDir))
         .addResultListener(new CommandLineProgress(System.out))
         // GENDREAU SCENARIOS
         .addScenarios(FileProvider.builder()
@@ -251,26 +254,56 @@ public class PerformExperiment {
     for (final MASConfiguration config : groupedResults.keySet()) {
       final Collection<SimulationResult> group = groupedResults.get(config);
 
-      final File configResult = new File(RESULTS + config.getName() + ".csv");
+      final File configResult =
+        new File(experimentDir, config.getName() + "-final.csv");
       final File timeLogResult =
-        new File(RESULTS + config.getName() + "-timelog.csv");
+        new File(experimentDir, config.getName() + "-timelog-summary.csv");
 
       // deletes the file in case it already exists
       configResult.delete();
       timeLogResult.delete();
       createCSVWithHeader(configResult);
-      createTimeLogHeader(timeLogResult);
+      createTimeLogSummaryHeader(timeLogResult);
       for (final SimulationResult sr : group) {
         appendSimResult(sr, configResult);
 
-        timeLog(sr, timeLogResult);
+        appendTimeLogSummary(sr, timeLogResult);
+
+        createTimeLog(sr, experimentDir);
+
       }
 
     }
 
   }
 
-  static void createTimeLogHeader(File target) {
+  static void createTimeLog(SimulationResult sr, File experimentDir) {
+    if (!(sr.getResultObject() instanceof ExperimentInfo)) {
+      return;
+    }
+    final SimArgs simArgs = sr.getSimArgs();
+    final Scenario scenario = simArgs.getScenario();
+
+    final File timeLogFile = new File(experimentDir, Joiner.on("-").join(
+      simArgs.getMasConfig().getName(),
+      scenario.getProblemClass().getId(),
+      scenario.getProblemInstanceId(),
+      simArgs.getRandomSeed()) + ".csv");
+
+    final ExperimentInfo info = (ExperimentInfo) sr.getResultObject();
+
+    try (FileWriter writer = new FileWriter(timeLogFile)) {
+      timeLogFile.createNewFile();
+      for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
+        writer.write(Long.toString(md.getDeviationNs()));
+        writer.write(System.lineSeparator());
+      }
+    } catch (final IOException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  static void createTimeLogSummaryHeader(File target) {
     try {
       Files.append(Joiner.on(',').join(
         "problem-class",
@@ -288,7 +321,7 @@ public class PerformExperiment {
     }
   }
 
-  static void timeLog(SimulationResult sr, File target) {
+  static void appendTimeLogSummary(SimulationResult sr, File target) {
 
     if (sr.getResultObject() instanceof ExperimentInfo) {
 
@@ -309,9 +342,11 @@ public class PerformExperiment {
           sr.getSimArgs().getMasConfig().getName(),
           totalMeasuredDeviations,
           sumDeviationNs,
-          sumDeviationNs / totalMeasuredDeviations,
+          totalMeasuredDeviations == 0 ? 0
+              : sumDeviationNs / totalMeasuredDeviations,
           sumCorrectionNs,
-          sumCorrectionNs / totalMeasuredDeviations,
+          totalMeasuredDeviations == 0 ? 0
+              : sumCorrectionNs / totalMeasuredDeviations,
           info.getRtCount(),
           info.getStCount() + "\n"), target, Charsets.UTF_8);
       } catch (final IOException e) {
@@ -339,6 +374,7 @@ public class PerformExperiment {
   static void createCSVWithHeader(File f) {
     try {
       Files.createParentDirs(f);
+
       Files.append(
         "dynamism,urgency,scale,cost,travel_time,tardiness,over_time,is_valid,"
             + "scenario_id,random_seed,comp_time,num_vehicles,num_orders\n",
@@ -356,6 +392,9 @@ public class PerformExperiment {
     final int numVehicles = FluentIterable
         .from(sr.getSimArgs().getScenario().getEvents())
         .filter(AddVehicleEvent.class).size();
+    final int numParcels = FluentIterable
+        .from(sr.getSimArgs().getScenario().getEvents())
+        .filter(AddParcelEvent.class).size();
 
     try {
       if (sr.getSimArgs().getScenario()
@@ -366,7 +405,7 @@ public class PerformExperiment {
               .appendTo(new StringBuilder(),
                 asList(-1, -1, -1, -1, false,
                   scenarioName, sr.getSimArgs().getRandomSeed(), -1,
-                  numVehicles))
+                  numVehicles, numParcels))
               .append(System.lineSeparator())
               .toString();
           Files.append(line, destFile, Charsets.UTF_8);
@@ -384,10 +423,10 @@ public class PerformExperiment {
 
           final String line = Joiner.on(",")
               .appendTo(new StringBuilder(),
-                asList(cost, travelTime,
+                asList(-1, -1, -1, cost, travelTime,
                   tardiness, overTime, isValidResult, scenarioName,
                   sr.getSimArgs().getRandomSeed(),
-                  computationTime, numVehicles))
+                  computationTime, numVehicles, numParcels))
               .append(System.lineSeparator())
               .toString();
 
@@ -473,31 +512,69 @@ public class PerformExperiment {
     }
   }
 
+  static File createExperimentDir(File target) {
+    final String timestamp = ISODateTimeFormat.dateHourMinuteSecond()
+        .print(System.currentTimeMillis());
+    final File experimentDirectory = new File(target, timestamp);
+    experimentDirectory.mkdirs();
+
+    final File latest = new File(target, "latest/");
+    if (latest.exists()) {
+      latest.delete();
+    }
+    try {
+      java.nio.file.Files.createSymbolicLink(
+        latest.toPath(),
+        experimentDirectory.getAbsoluteFile().toPath());
+    } catch (final IOException e) {
+      throw new IllegalStateException(e);
+    }
+    return experimentDirectory;
+  }
+
   static class IncrementalResultWriter implements ResultListener {
     final File experimentDirectory;
 
     public IncrementalResultWriter(File target) {
-      final String timestamp = ISODateTimeFormat.dateHourMinuteSecond()
-          .print(System.currentTimeMillis());
-      experimentDirectory = new File(target, timestamp);
-      experimentDirectory.mkdirs();
-
-      final File latest = new File(target, "latest/");
-      if (latest.exists()) {
-        latest.delete();
-      }
-      try {
-        java.nio.file.Files.createSymbolicLink(
-          latest.toPath(),
-          experimentDirectory.getAbsoluteFile().toPath());
-      } catch (final IOException e) {
-        throw new IllegalStateException(e);
-      }
-
+      experimentDirectory = target;
     }
 
     @Override
-    public void startComputing(int numberOfSimulations) {}
+    public void startComputing(int numberOfSimulations,
+        ImmutableSet<MASConfiguration> configurations,
+        ImmutableSet<Scenario> scenarios,
+        int repetitions) {
+
+      final StringBuilder sb = new StringBuilder("Experiment summary");
+      sb.append(System.lineSeparator())
+          .append("Number of simulations: ")
+          .append(numberOfSimulations)
+          .append(System.lineSeparator())
+          .append("Number of configurations: ")
+          .append(configurations.size())
+          .append(System.lineSeparator())
+          .append("Number of scenarios: ")
+          .append(scenarios.size())
+          .append(System.lineSeparator())
+          .append("Number of repetitions: ")
+          .append(repetitions)
+          .append(System.lineSeparator())
+          .append("Configurations:")
+          .append(System.lineSeparator());
+
+      for (final MASConfiguration config : configurations) {
+        sb.append(config.getName())
+            .append(System.lineSeparator());
+      }
+
+      final File setup = new File(experimentDirectory, "experiment-setup.txt");
+      try {
+        setup.createNewFile();
+        Files.write(sb.toString(), setup, Charsets.UTF_8);
+      } catch (final IOException e) {
+        throw new IllegalStateException(e);
+      }
+    }
 
     @Override
     public void receive(SimulationResult result) {
