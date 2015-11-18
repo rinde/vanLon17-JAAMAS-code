@@ -144,7 +144,7 @@ public class PerformExperiment {
         .computeLocal()
         .withRandomSeed(123)
         .withThreads(1)
-        // .repeat(10)
+        .repeat(3)
         .addResultListener(new IncrementalResultWriter(experimentDir))
         .addResultListener(new CommandLineProgress(System.out))
         // GENDREAU SCENARIOS
@@ -206,7 +206,7 @@ public class PerformExperiment {
         // cheapest insertion
         .addConfiguration(MASConfiguration.builder(
           RtCentral.solverConfigurationAdapt(
-            CheapestInsertionHeuristic.supplier(SUM), "CheapInsert", true))
+            CheapestInsertionHeuristic.supplier(SUM), "", true))
             .addModel(RealtimeClockLogger.builder())
             .build())
 
@@ -256,23 +256,13 @@ public class PerformExperiment {
 
       final File configResult =
         new File(experimentDir, config.getName() + "-final.csv");
-      final File timeLogResult =
-        new File(experimentDir, config.getName() + "-timelog-summary.csv");
 
       // deletes the file in case it already exists
       configResult.delete();
-      timeLogResult.delete();
       createCSVWithHeader(configResult);
-      createTimeLogSummaryHeader(timeLogResult);
       for (final SimulationResult sr : group) {
         appendSimResult(sr, configResult);
-
-        appendTimeLogSummary(sr, timeLogResult);
-
-        createTimeLog(sr, experimentDir);
-
       }
-
     }
 
   }
@@ -284,18 +274,30 @@ public class PerformExperiment {
     final SimArgs simArgs = sr.getSimArgs();
     final Scenario scenario = simArgs.getScenario();
 
-    final File timeLogFile = new File(experimentDir, Joiner.on("-").join(
+    final String id = Joiner.on("-").join(
       simArgs.getMasConfig().getName(),
       scenario.getProblemClass().getId(),
       scenario.getProblemInstanceId(),
-      simArgs.getRandomSeed()) + ".csv");
+      simArgs.getRandomSeed());
+
+    final File deviationsFile = new File(experimentDir, id + "-deviations.csv");
+    final File iatFile = new File(experimentDir, id + "-interarrivaltimes.csv");
 
     final ExperimentInfo info = (ExperimentInfo) sr.getResultObject();
 
-    try (FileWriter writer = new FileWriter(timeLogFile)) {
-      timeLogFile.createNewFile();
+    try (FileWriter writer = new FileWriter(deviationsFile)) {
+      deviationsFile.createNewFile();
       for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
         writer.write(Long.toString(md.getDeviationNs()));
+        writer.write(System.lineSeparator());
+      }
+    } catch (final IOException e) {
+      throw new IllegalStateException(e);
+    }
+    try (FileWriter writer = new FileWriter(iatFile)) {
+      iatFile.createNewFile();
+      for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
+        writer.write(Long.toString(md.getInterArrivalTime()));
         writer.write(System.lineSeparator());
       }
     } catch (final IOException e) {
@@ -309,11 +311,13 @@ public class PerformExperiment {
         "problem-class",
         "instance",
         "config",
+        "random-seed",
         "measured-deviations",
         "sum-deviations",
         "avg-deviation",
         "sum-correction",
         "avg-correction",
+        "avg-interarrival-time",
         "rt-count",
         "st-count\n"), target, Charsets.UTF_8);
     } catch (final IOException e) {
@@ -330,9 +334,11 @@ public class PerformExperiment {
       final int totalMeasuredDeviations = info.getMeasuredDeviations().size();
       long sumDeviationNs = 0;
       long sumCorrectionNs = 0;
+      long sumIatNs = 0;
       for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
         sumDeviationNs += md.getDeviationNs();
         sumCorrectionNs += md.getCorrectionNs();
+        sumIatNs += md.getInterArrivalTime();
       }
 
       try {
@@ -340,6 +346,7 @@ public class PerformExperiment {
           sr.getSimArgs().getScenario().getProblemClass().getId(),
           sr.getSimArgs().getScenario().getProblemInstanceId(),
           sr.getSimArgs().getMasConfig().getName(),
+          sr.getSimArgs().getRandomSeed(),
           totalMeasuredDeviations,
           sumDeviationNs,
           totalMeasuredDeviations == 0 ? 0
@@ -347,6 +354,7 @@ public class PerformExperiment {
           sumCorrectionNs,
           totalMeasuredDeviations == 0 ? 0
               : sumCorrectionNs / totalMeasuredDeviations,
+          sumIatNs / totalMeasuredDeviations,
           info.getRtCount(),
           info.getStCount() + "\n"), target, Charsets.UTF_8);
       } catch (final IOException e) {
@@ -578,15 +586,24 @@ public class PerformExperiment {
 
     @Override
     public void receive(SimulationResult result) {
-
-      final File targetFile = new File(experimentDirectory,
-          result.getSimArgs().getMasConfig().getName() + ".csv");
+      final String configName = result.getSimArgs().getMasConfig().getName();
+      final File targetFile =
+        new File(experimentDirectory, configName + ".csv");
 
       if (!targetFile.exists()) {
         createCSVWithHeader(targetFile);
       }
 
       appendSimResult(result, targetFile);
+
+      final File timeLogResult =
+        new File(experimentDirectory, configName + "-timelog-summary.csv");
+
+      if (!timeLogResult.exists()) {
+        createTimeLogSummaryHeader(timeLogResult);
+      }
+      appendTimeLogSummary(result, timeLogResult);
+      createTimeLog(result, experimentDirectory);
     }
 
     @Override
