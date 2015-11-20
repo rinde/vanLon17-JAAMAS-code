@@ -18,3 +18,12 @@ hs_err_pid*
 log.txt
 *.out
 files/
+
+*.Rhistory
+*.md5
+*.aux
+*.auxlock
+*.fdb_latexmk
+*.pdf
+*.synctex.gz
+*.tex
