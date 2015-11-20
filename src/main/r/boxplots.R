@@ -1,38 +1,78 @@
+library("tikzDevice")
 library("ggplot2")
 library("data.table")
 
 script.dir <- dirname(sys.frame(1)$ofile)
-target.dir <- paste(script.dir,"/../../../files/results/latest/",sep="")
+target.dir <- paste(script.dir,"/../../../files/results/2015-11-18T15:11:29-GENDREAU-250/",sep="")
 
 csv_files <- list.files(path=target.dir,pattern=".*-interarrivaltimes.csv")
-
 alldata <- NULL
-i <- 0
+allsummary <- NULL
 for( file in csv_files){
-  print(file)
-  cname <- paste("time",i,sep="")
-  print(cname)
-  table <- data.table(read.csv(paste(target.dir,file,sep=""),col.names=(cname)))
+  parts <- unlist(strsplit(file,"-"))
+  size <- length(parts)
+  
+  table <- data.table(read.csv(paste(target.dir,file,sep=""),col.names=("time")))
+  table <- table[,list(time=(time/1000000)-250)]
+  
+ 
+  
+ 
+  
+  # if seed is negative (contains a '-') we will find an empty part at this position
+  if( parts[size-2] == ''){
+    seed <- paste("-",parts[size-1],sep="")
+    size <- size-1
+  }else {
+    seed <- parts[size-1]
+  }
+  instanceId <- parts[size-2]
+  problemClass <- gsub("_","-",parts[size-3])
+  
+  
+  configString <- paste(parts[1:(size-4)],collapse='-')
+  
+  if(grepl("Opt2",configString)){
+    config <- "Opt2"
+  }else if(grepl("CheapestInsertionHeuristic", configString)){
+    config <- "CIH"
+  } else {
+    config <- paste(parts[1:(size-4)],collapse='-')
+  }
+  
+  table[,"seed"] <- seed
+  table[,"instanceId"] <- instanceId
+  table[,"problemClass"] <- problemClass
+  table[,"config"] <- config
+  
+  # sum all positives and sum all negatives
+  negatives <- subset(table,time < -1)
+  positives <- subset(table,time > 1)
+  summary <- data.table(seed,instanceId,problemClass,config,
+               mean(table$time),    sum(table$time),    length(table$time),
+               mean(negatives$time),sum(negatives$time),length(negatives$time),
+               mean(positives$time),sum(positives$time),length(positives$time)
+               )
+  names(summary) <- c("seed","instanceId","problemClass","config","mean","sum","length","mean-","sum-","length-","mean+","sum+","length+")
   
   if( is.null(alldata)){
     alldata <- table
-  } else {
-   # alldata <- rbind(alldata,table)
     
-    alldata[,cname] <- table
+    allsummary <- summary
+  } else {
+    alldata <- rbind(alldata,table)
+    allsummary <- rbind(allsummary,summary)
   }
-  
-  i <- i +1
 }
 
-#file <- paste(script.dir,"/../../../files/results/latest/RtCentral-CheapestInsertionHeuristic.supplier(Gendreau06ObjectiveFunction)-_240_24-1--570648509535936272-interarrivaltimes.csv",sep="")
+#alldata <- subset(alldata, problemClass == "-450-24" & instanceId == "1")
+tikz(file="boxplot.tex",standAlone=T)#,height=5,width=5)#8.3,width=11.6)
+p <- ggplot(alldata, aes(x=interaction(config,problemClass), time)) 
+p <- p +geom_boxplot(outlier.size=1,outlier.colour="orange") + 
+  geom_abline(intercept = 0, slope = 0, colour ="red") + 
+  ylab("time (ms)")
 
-
-
-#dt2 <- table[,list(time=time/1000000)]
-
-
-p <- ggplot(alldata, aes(factor(x), time))
-p + geom_boxplot() + geom_abline(intercept = 250, slope = 0, colour ="red")
+show(p)
+garbage <- dev.off()   
 
 
