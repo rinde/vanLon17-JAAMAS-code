@@ -35,7 +35,6 @@ import org.joda.time.format.ISODateTimeFormat;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
-import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
@@ -72,6 +71,7 @@ import com.github.rinde.rinsim.pdptw.common.RouteRenderer;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
 import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
 import com.github.rinde.rinsim.scenario.Scenario;
+import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.scenario.StopConditions;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
@@ -103,20 +103,24 @@ import net.openhft.affinity.AffinityLock;
  * @author Rinde van Lon
  */
 public class PerformExperiment {
-  static final Gendreau06ObjectiveFunction SUM =
-    Gendreau06ObjectiveFunction.instance();
-
   static final String DATASET = "files/dataset/";
   static final String RESULTS = "files/results/";
 
   public static void main(String[] args) throws IOException {
-    final StochasticSupplier<RealtimeSolver> cih =
-      SolverToRealtimeAdapter.create(CheapestInsertionHeuristic.supplier(SUM));
 
-    final StochasticSupplier<RealtimeSolver> opt2 =
-      SolverToRealtimeAdapter.create(
-        Opt2.breadthFirstSupplier(
-          CheapestInsertionHeuristic.supplier(SUM), SUM));
+    final boolean gendreauExperiment = false;
+
+    final Gendreau06ObjectiveFunction objFunc =
+      gendreauExperiment ? Gendreau06ObjectiveFunction.instance()
+          : Gendreau06ObjectiveFunction.instance(50d);
+
+    final StochasticSupplier<RealtimeSolver> cih =
+      SolverToRealtimeAdapter
+          .create(CheapestInsertionHeuristic.supplier(objFunc));
+
+    final StochasticSupplier<RealtimeSolver> opt2 = Opt2.builder()
+        .withObjectiveFunction(objFunc)
+        .buildRealtimeSolverSupplier();
 
     // Scenario s =
     // ScenarioIO.read(Paths.get(DATASET, "0.80-5-10.00-0.scen"));
@@ -140,31 +144,58 @@ public class PerformExperiment {
 
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
-        .build(SUM)
+        .build(objFunc)
         .computeLocal()
         .withRandomSeed(123)
-        .withThreads(1)
-        .repeat(3)
+        .withThreads(11)
+        .repeat(1)
         .addResultListener(new IncrementalResultWriter(experimentDir))
-        .addResultListener(new CommandLineProgress(System.out))
-        // GENDREAU SCENARIOS
-        .addScenarios(FileProvider.builder()
-            .add(Paths.get("files/gendreau2006/requests"))
-            .filter("glob:**req_rapide_1_240_24"))
-        .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
-          Gendreau06Parser.reader()))
-        // DYN-URG-SCL SCENARIOS
-        // .addScenarios(FileProvider.builder()
-        // .add(Paths.get(DATASET))
-        // .filter("glob:**-[0-9].scen"))
-        // .setScenarioReader(ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
+        .addResultListener(new CommandLineProgress(System.out));
+
+    if (gendreauExperiment) {
+      // GENDREAU SCENARIOS
+      experimentBuilder
+          .addScenarios(FileProvider.builder()
+              .add(Paths.get("files/gendreau2006/requests"))
+              .filter("glob:**req_rapide_1_240_24"))
+          .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
+            Gendreau06Parser.reader()));
+    } else {
+      // DYN-URG-SCL SCENARIOS
+      experimentBuilder
+          .addScenarios(FileProvider.builder()
+              .add(Paths.get(DATASET))
+              .filter("glob:**-[0-9].scen"))
+          .setScenarioReader(
+            ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE));
+      // .setScenarioReader(ScenarioIO.readerAdapter(
+      // Functions.compose(ScenarioConverter.INSTANCE,
+      // ScenarioConverters.eventConverter(
+      // new Function<TimedEvent, TimedEvent>() {
+      // @Nonnull
+      // @Override
+      // public TimedEvent apply(@Nullable TimedEvent input) {
+      // final TimedEvent in = verifyNotNull(input);
+      // if (in instanceof AddParcelEvent) {
+      // return AddParcelEvent.create(
+      // Parcel.builder(((AddParcelEvent) in)
+      // .getParcelDTO())
+      // .orderAnnounceTime(-1)
+      // .buildDTO());
+      // }
+      // return in;
+      // }
+      // }))));
+    }
+
+    experimentBuilder
         .usePostProcessor(LogProcessor.INSTANCE)
         .addConfiguration(MASConfiguration.pdptwBuilder()
             .setName("ReAuction-2optRP-cihBID")
             .addEventHandler(AddVehicleEvent.class,
               DefaultTruckFactory.builder()
                   .setRoutePlanner(RtSolverRoutePlanner.supplier(opt2))
-                  .setCommunicator(RtSolverBidder.supplier(SUM, cih))
+                  .setCommunicator(RtSolverBidder.supplier(objFunc, cih))
                   .setLazyComputation(false)
                   .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
                   .build())
@@ -182,40 +213,22 @@ public class PerformExperiment {
             .addModel(RealtimeClockLogger.builder())
             .build())
 
-        // .addConfiguration(
-        // MASConfiguration.builder(
-        // RtCentral.solverConfigurationAdapt(
-        // // Opt2.breadthFirstSupplier(
-        // SolverValidator.wrap(
-        // RandomSolver.supplier()
-        // // CheapestInsertionHeuristic.supplier(SUM)),
-        // // SUM),
-        // // "CheapInsert"))
-        // ), "random"))
-        // .addModel(RealtimeClockLogger.builder())
-        // .build())
-
-        // random solver
-        // .addConfiguration(MASConfiguration.builder(
-        // RtCentral.solverConfigurationAdapt(
-        // SolverValidator.wrap(RandomSolver.supplier()), "random"))
-        // .addModel(RealtimeClockLogger.builder())
-        // .addEventHandler(AddParcelEvent.class, new DebugParcelCreator())
-        // .build())
-
         // cheapest insertion
         .addConfiguration(MASConfiguration.builder(
           RtCentral.solverConfigurationAdapt(
-            CheapestInsertionHeuristic.supplier(SUM), "", true))
+            CheapestInsertionHeuristic.supplier(objFunc), "", true))
             .addModel(RealtimeClockLogger.builder())
             .build())
 
         // 2-opt cheapest insertion
         .addConfiguration(MASConfiguration.builder(
-          RtCentral.solverConfigurationAdapt(
-            Opt2.breadthFirstSupplier(
-              CheapestInsertionHeuristic.supplier(SUM), SUM),
-            "", true))
+          RtCentral.solverConfiguration(
+            // Central.solverConfiguration(
+            Opt2.builder()
+                .withObjectiveFunction(objFunc)
+                .buildRealtimeSolverSupplier(),
+            ""))
+            // , true))
             .addModel(RealtimeClockLogger.builder())
             .build())
 
@@ -230,7 +243,7 @@ public class PerformExperiment {
             .with(RouteRenderer.builder())
             .with(PDPModelRenderer.builder())
             .with(PlaneRoadModelRenderer.builder())
-            .with(AuctionPanel.builder())
+            // .with(AuctionPanel.builder())
             .with(TimeLinePanel.builder())
             .with(RtSolverPanel.builder())
             .withResolution(1280, 1024));
@@ -371,7 +384,7 @@ public class PerformExperiment {
         final Scenario s = verifyNotNull(input);
         return Scenario.builder(s)
             .removeModelsOfType(TimeModel.AbstractBuilder.class)
-            .addModel(TimeModel.builder().withRealTime().withTickLength(250))
+            .addModel(TimeModel.builder().withTickLength(250).withRealTime())
             .setStopCondition(StopConditions.or(s.getStopCondition(),
               StopConditions.limitedTime(10 * 60 * 60 * 1000)))
             .build();
@@ -403,6 +416,8 @@ public class PerformExperiment {
     final int numParcels = FluentIterable
         .from(sr.getSimArgs().getScenario().getEvents())
         .filter(AddParcelEvent.class).size();
+    final Gendreau06ObjectiveFunction objFunc =
+      (Gendreau06ObjectiveFunction) sr.getSimArgs().getObjectiveFunction();
 
     try {
       if (sr.getSimArgs().getScenario()
@@ -422,11 +437,11 @@ public class PerformExperiment {
           final ExperimentInfo ei = (ExperimentInfo) sr.getResultObject();
           final StatisticsDTO stats = ei.getStats();
 
-          final double cost = SUM.computeCost(stats);
-          final double travelTime = SUM.travelTime(stats);
-          final double tardiness = SUM.tardiness(stats);
-          final double overTime = SUM.overTime(stats);
-          final boolean isValidResult = SUM.isValidResult(stats);
+          final double cost = objFunc.computeCost(stats);
+          final double travelTime = objFunc.travelTime(stats);
+          final double tardiness = objFunc.tardiness(stats);
+          final double overTime = objFunc.overTime(stats);
+          final boolean isValidResult = objFunc.isValidResult(stats);
           final long computationTime = stats.computationTime;
 
           final String line = Joiner.on(",")
@@ -474,11 +489,11 @@ public class PerformExperiment {
           final StatisticsDTO stats = ei.getStats();
 
           // final StatisticsDTO stats = (StatisticsDTO) sr.getResultObject();
-          final double cost = SUM.computeCost(stats);
-          final double travelTime = SUM.travelTime(stats);
-          final double tardiness = SUM.tardiness(stats);
-          final double overTime = SUM.overTime(stats);
-          final boolean isValidResult = SUM.isValidResult(stats);
+          final double cost = objFunc.computeCost(stats);
+          final double travelTime = objFunc.travelTime(stats);
+          final double tardiness = objFunc.tardiness(stats);
+          final double overTime = objFunc.overTime(stats);
+          final boolean isValidResult = objFunc.isValidResult(stats);
           final long computationTime = stats.computationTime;
 
           final String line = Joiner.on(",")
