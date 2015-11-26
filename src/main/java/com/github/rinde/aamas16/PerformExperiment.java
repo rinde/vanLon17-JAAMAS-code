@@ -207,7 +207,7 @@ public class PerformExperiment {
         .build(objFunc)
         .computeLocal()
         .withRandomSeed(123)
-        .withThreads(11)
+        .withThreads(1)
         .repeat(1)
         .addResultListener(new IncrementalResultWriter(experimentDir))
         .addResultListener(new CommandLineProgress(System.out));
@@ -587,9 +587,12 @@ public class PerformExperiment {
 
   static class IncrementalResultWriter implements ResultListener {
     final File experimentDirectory;
+    final File timeDeviationsDirectory;
 
     public IncrementalResultWriter(File target) {
       experimentDirectory = target;
+      timeDeviationsDirectory = new File(target, "time-deviations");
+      timeDeviationsDirectory.mkdirs();
     }
 
     @Override
@@ -648,7 +651,7 @@ public class PerformExperiment {
         createTimeLogSummaryHeader(timeLogResult);
       }
       appendTimeLogSummary(result, timeLogResult);
-      createTimeLog(result, experimentDirectory);
+      createTimeLog(result, timeDeviationsDirectory);
     }
 
     @Override
