@@ -105,17 +105,18 @@ import net.openhft.affinity.AffinityLock;
  * @author Rinde van Lon
  */
 public class PerformExperiment {
-  static final String DATASET = "files/vanLonHolvoet15/";
-  static final String RESULTS = "files/results/";
+  static final String VANLON_HOLVOET_DATASET = "files/vanLonHolvoet15/";
+  static final String RESULTS_MAIN_DIR = "files/results/";
 
   enum ExperimentType {
 
     GENDREAU(Gendreau06ObjectiveFunction.instance()) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(FileProvider.builder()
-            .add(Paths.get("files/gendreau2006/requests"))
-            .filter("glob:**req_rapide_**"))
+        bldr.addScenarios(
+          FileProvider.builder()
+              .add(Paths.get("files/gendreau2006/requests"))
+              .filter("glob:**req_rapide_**"))
             .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
               Gendreau06Parser.reader()));
       }
@@ -127,9 +128,10 @@ public class PerformExperiment {
     VAN_LON15(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(FileProvider.builder()
-            .add(Paths.get(DATASET))
-            .filter("glob:**-[0-9].scen"))
+        bldr.addScenarios(
+          FileProvider.builder()
+              .add(Paths.get(VANLON_HOLVOET_DATASET))
+              .filter("glob:**-[0-9].scen"))
             .setScenarioReader(
               ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE));
       }
@@ -143,7 +145,7 @@ public class PerformExperiment {
       @Override
       void apply(Builder bldr) {
         bldr.addScenarios(FileProvider.builder()
-            .add(Paths.get(DATASET))
+            .add(Paths.get(VANLON_HOLVOET_DATASET))
             .filter("glob:**0.50-20-10.00-[0-9].scen"))
             .setScenarioReader(
               ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
@@ -164,7 +166,6 @@ public class PerformExperiment {
     }
 
     static ExperimentType find(String string) {
-
       for (final ExperimentType type : ExperimentType.values()) {
         final String name = type.name();
         if (string.equalsIgnoreCase(name)
@@ -200,7 +201,8 @@ public class PerformExperiment {
         .buildRealtimeSolverSupplier();
 
     final File experimentDir =
-      createExperimentDir(new File(RESULTS + "/" + experimentType.name()));
+      createExperimentDir(
+        new File(RESULTS_MAIN_DIR + "/" + experimentType.name()));
 
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
@@ -489,7 +491,7 @@ public class PerformExperiment {
 
         final String scenarioName = Joiner.on("-").join(pc, id);
         final List<String> propsStrings = Files.readLines(new File(
-            DATASET + scenarioName + ".properties"),
+            VANLON_HOLVOET_DATASET + scenarioName + ".properties"),
           Charsets.UTF_8);
         final Map<String, String> properties = Splitter.on("\n")
             .withKeyValueSeparator(" = ")
