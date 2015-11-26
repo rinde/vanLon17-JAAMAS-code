@@ -15,6 +15,7 @@
  */
 package com.github.rinde.aamas16;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verifyNotNull;
 import static java.util.Arrays.asList;
 
@@ -55,6 +56,7 @@ import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
 import com.github.rinde.rinsim.core.model.time.TimeModel;
 import com.github.rinde.rinsim.experiment.CommandLineProgress;
 import com.github.rinde.rinsim.experiment.Experiment;
+import com.github.rinde.rinsim.experiment.Experiment.Builder;
 import com.github.rinde.rinsim.experiment.Experiment.SimArgs;
 import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
 import com.github.rinde.rinsim.experiment.ExperimentResults;
@@ -103,16 +105,91 @@ import net.openhft.affinity.AffinityLock;
  * @author Rinde van Lon
  */
 public class PerformExperiment {
-  static final String DATASET = "files/dataset/";
+  static final String DATASET = "files/vanLonHolvoet15/";
   static final String RESULTS = "files/results/";
 
-  public static void main(String[] args) throws IOException {
+  enum ExperimentType {
 
-    final boolean gendreauExperiment = false;
+    GENDREAU(Gendreau06ObjectiveFunction.instance()) {
+      @Override
+      void apply(Builder bldr) {
+        bldr.addScenarios(FileProvider.builder()
+            .add(Paths.get("files/gendreau2006/requests"))
+            .filter("glob:**req_rapide_**"))
+            .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
+              Gendreau06Parser.reader()));
+      }
+    },
+
+    /**
+     * Experiment on the Van Lon & Holvoet (2015) dataset.
+     */
+    VAN_LON15(Gendreau06ObjectiveFunction.instance(50d)) {
+      @Override
+      void apply(Builder bldr) {
+        bldr.addScenarios(FileProvider.builder()
+            .add(Paths.get(DATASET))
+            .filter("glob:**-[0-9].scen"))
+            .setScenarioReader(
+              ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE));
+      }
+    },
+
+    /**
+     * Investigate one setting of the Van Lon & Holvoet (2015) dataset with many
+     * repetitions.
+     */
+    TIME_DEVIATION(Gendreau06ObjectiveFunction.instance(50d)) {
+      @Override
+      void apply(Builder bldr) {
+        bldr.addScenarios(FileProvider.builder()
+            .add(Paths.get(DATASET))
+            .filter("glob:**0.50-20-10.00-[0-9].scen"))
+            .setScenarioReader(
+              ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
+            .repeat(10);
+      }
+    };
+
+    private final Gendreau06ObjectiveFunction objectiveFunction;
+
+    ExperimentType(Gendreau06ObjectiveFunction objFunc) {
+      objectiveFunction = objFunc;
+    }
+
+    abstract void apply(Experiment.Builder b);
+
+    public Gendreau06ObjectiveFunction getObjectiveFunction() {
+      return objectiveFunction;
+    }
+
+    static ExperimentType find(String string) {
+
+      for (final ExperimentType type : ExperimentType.values()) {
+        final String name = type.name();
+        if (string.equalsIgnoreCase(name)
+            || string.equalsIgnoreCase(name.replace("_", ""))) {
+          return type;
+        }
+      }
+      throw new IllegalArgumentException(
+          ExperimentType.class.getName() + " has no value called " + string);
+    }
+  }
+
+  public static void main(String[] args) throws IOException {
+    checkArgument(args.length > 2 && args[0].equals("-exp"),
+      "The type of experiment that should be run must be specified as follows: "
+          + "\'-exp vanlon15|gendreau|timedeviation\', this option must be the "
+          + "first in the list.");
+
+    final ExperimentType experimentType = ExperimentType.find(args[1]);
+    System.out.println(experimentType);
+    final String[] expArgs = new String[args.length - 2];
+    System.arraycopy(args, 2, expArgs, 0, args.length - 2);
 
     final Gendreau06ObjectiveFunction objFunc =
-      gendreauExperiment ? Gendreau06ObjectiveFunction.instance()
-          : Gendreau06ObjectiveFunction.instance(50d);
+      experimentType.getObjectiveFunction();
 
     final StochasticSupplier<RealtimeSolver> cih =
       SolverToRealtimeAdapter
@@ -122,25 +199,8 @@ public class PerformExperiment {
         .withObjectiveFunction(objFunc)
         .buildRealtimeSolverSupplier();
 
-    // Scenario s =
-    // ScenarioIO.read(Paths.get(DATASET, "0.80-5-10.00-0.scen"));
-    //
-    // s = Scenario.builder(s)
-    // .removeModelsOfType(TimeModel.AbstractBuilder.class)
-    // .addModel(TimeModel.builder()
-    // .withRealTime()
-    // .withTickLength(250))
-    // .build();
-
-    // final List<TimedEvent> events = Scenario.builder(s)
-    // .filterEvents(instanceOf(AddParcelEvent.class)).build()
-    // .getEvents().subList(0, 10);
-    // s = Scenario.builder(s)
-    // // .ensureFrequency(instanceOf(AddVehicleEvent.class), 2)
-    // .filterEvents(not(instanceOf(AddParcelEvent.class)))
-    // .addEvents(events)
-    // .build();
-    final File experimentDir = createExperimentDir(new File(RESULTS));
+    final File experimentDir =
+      createExperimentDir(new File(RESULTS + "/" + experimentType.name()));
 
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
@@ -152,41 +212,7 @@ public class PerformExperiment {
         .addResultListener(new IncrementalResultWriter(experimentDir))
         .addResultListener(new CommandLineProgress(System.out));
 
-    if (gendreauExperiment) {
-      // GENDREAU SCENARIOS
-      experimentBuilder
-          .addScenarios(FileProvider.builder()
-              .add(Paths.get("files/gendreau2006/requests"))
-              .filter("glob:**req_rapide_1_240_24"))
-          .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
-            Gendreau06Parser.reader()));
-    } else {
-      // DYN-URG-SCL SCENARIOS
-      experimentBuilder
-          .addScenarios(FileProvider.builder()
-              .add(Paths.get(DATASET))
-              .filter("glob:**-[0-9].scen"))
-          .setScenarioReader(
-            ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE));
-      // .setScenarioReader(ScenarioIO.readerAdapter(
-      // Functions.compose(ScenarioConverter.INSTANCE,
-      // ScenarioConverters.eventConverter(
-      // new Function<TimedEvent, TimedEvent>() {
-      // @Nonnull
-      // @Override
-      // public TimedEvent apply(@Nullable TimedEvent input) {
-      // final TimedEvent in = verifyNotNull(input);
-      // if (in instanceof AddParcelEvent) {
-      // return AddParcelEvent.create(
-      // Parcel.builder(((AddParcelEvent) in)
-      // .getParcelDTO())
-      // .orderAnnounceTime(-1)
-      // .buildDTO());
-      // }
-      // return in;
-      // }
-      // }))));
-    }
+    experimentType.apply(experimentBuilder);
 
     experimentBuilder
         .usePostProcessor(LogProcessor.INSTANCE)
@@ -249,7 +275,7 @@ public class PerformExperiment {
             .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
-      experimentBuilder.perform(System.out, args);
+      experimentBuilder.perform(System.out, expArgs);
     final long duration = System.currentTimeMillis() - time;
     if (!results.isPresent()) {
       return;
@@ -378,6 +404,10 @@ public class PerformExperiment {
   }
 
   enum ScenarioConverter implements Function<Scenario, Scenario> {
+    /**
+     * Changes ticksize to 250ms and adds stopcondition with maximum sim time of
+     * 10 hours.
+     */
     INSTANCE {
       @Override
       public Scenario apply(@Nullable Scenario input) {
@@ -426,7 +456,7 @@ public class PerformExperiment {
         if (sr.getResultObject() instanceof FailureStrategy) {
           final String line = Joiner.on(",")
               .appendTo(new StringBuilder(),
-                asList(-1, -1, -1, -1, false,
+                asList(-1, -1, -1, -1, -1, -1, -1, false,
                   scenarioName, sr.getSimArgs().getRandomSeed(), -1,
                   numVehicles, numParcels))
               .append(System.lineSeparator())
