@@ -20,11 +20,9 @@ import static com.google.common.base.Verify.verifyNotNull;
 import static java.util.Arrays.asList;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,7 +62,6 @@ import com.github.rinde.rinsim.experiment.MASConfiguration;
 import com.github.rinde.rinsim.experiment.PostProcessor;
 import com.github.rinde.rinsim.experiment.PostProcessor.FailureStrategy;
 import com.github.rinde.rinsim.experiment.PostProcessors;
-import com.github.rinde.rinsim.experiment.ResultListener;
 import com.github.rinde.rinsim.io.FileProvider;
 import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
@@ -93,9 +90,6 @@ import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 
 import net.openhft.affinity.AffinityLock;
@@ -118,7 +112,8 @@ public class PerformExperiment {
               .add(Paths.get("files/gendreau2006/requests"))
               .filter("glob:**req_rapide_**"))
             .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
-              Gendreau06Parser.reader()));
+              Gendreau06Parser.reader()))
+            .addResultListener(new GendreauResultWriter(experimentDir));;
       }
     },
 
@@ -131,9 +126,10 @@ public class PerformExperiment {
         bldr.addScenarios(
           FileProvider.builder()
               .add(Paths.get(VANLON_HOLVOET_DATASET))
-              .filter("glob:**-[0-9].scen"))
+              .filter("glob:**[0-9].scen"))
             .setScenarioReader(
-              ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE));
+              ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
+            .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
       }
     },
 
@@ -149,9 +145,14 @@ public class PerformExperiment {
             .filter("glob:**0.50-20-10.00-[0-9].scen"))
             .setScenarioReader(
               ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
-            .repeat(10);
+            .repeat(10)
+            .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
       }
     };
+
+    final File experimentDir =
+      createExperimentDir(
+        new File(RESULTS_MAIN_DIR + "/" + name()));
 
     private final Gendreau06ObjectiveFunction objectiveFunction;
 
@@ -189,6 +190,10 @@ public class PerformExperiment {
     final String[] expArgs = new String[args.length - 2];
     System.arraycopy(args, 2, expArgs, 0, args.length - 2);
 
+    if (experimentType == ExperimentType.GENDREAU) {
+      MeasureGendreau.read(new File(MeasureGendreau.PROPS_FILE));
+    }
+
     final Gendreau06ObjectiveFunction objFunc =
       experimentType.getObjectiveFunction();
 
@@ -200,10 +205,6 @@ public class PerformExperiment {
         .withObjectiveFunction(objFunc)
         .buildRealtimeSolverSupplier();
 
-    final File experimentDir =
-      createExperimentDir(
-        new File(RESULTS_MAIN_DIR + "/" + experimentType.name()));
-
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
         .build(objFunc)
@@ -211,7 +212,6 @@ public class PerformExperiment {
         .withRandomSeed(123)
         .withThreads(1)
         .repeat(1)
-        .addResultListener(new IncrementalResultWriter(experimentDir))
         .addResultListener(new CommandLineProgress(System.out));
 
     experimentType.apply(experimentBuilder);
@@ -286,123 +286,6 @@ public class PerformExperiment {
     System.out.println("Done, computed " + results.get().getResults().size()
         + " simulations in " + duration / 1000d + "s");
 
-    final Multimap<MASConfiguration, SimulationResult> groupedResults =
-      LinkedHashMultimap.create();
-    for (final SimulationResult sr : results.get().sortedResults()) {
-      groupedResults.put(sr.getSimArgs().getMasConfig(), sr);
-    }
-
-    for (final MASConfiguration config : groupedResults.keySet()) {
-      final Collection<SimulationResult> group = groupedResults.get(config);
-
-      final File configResult =
-        new File(experimentDir, config.getName() + "-final.csv");
-
-      // deletes the file in case it already exists
-      configResult.delete();
-      createCSVWithHeader(configResult);
-      for (final SimulationResult sr : group) {
-        appendSimResult(sr, configResult);
-      }
-    }
-
-  }
-
-  static void createTimeLog(SimulationResult sr, File experimentDir) {
-    if (!(sr.getResultObject() instanceof ExperimentInfo)) {
-      return;
-    }
-    final SimArgs simArgs = sr.getSimArgs();
-    final Scenario scenario = simArgs.getScenario();
-
-    final String id = Joiner.on("-").join(
-      simArgs.getMasConfig().getName(),
-      scenario.getProblemClass().getId(),
-      scenario.getProblemInstanceId(),
-      simArgs.getRandomSeed());
-
-    final File deviationsFile = new File(experimentDir, id + "-deviations.csv");
-    final File iatFile = new File(experimentDir, id + "-interarrivaltimes.csv");
-
-    final ExperimentInfo info = (ExperimentInfo) sr.getResultObject();
-
-    try (FileWriter writer = new FileWriter(deviationsFile)) {
-      deviationsFile.createNewFile();
-      for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
-        writer.write(Long.toString(md.getDeviationNs()));
-        writer.write(System.lineSeparator());
-      }
-    } catch (final IOException e) {
-      throw new IllegalStateException(e);
-    }
-    try (FileWriter writer = new FileWriter(iatFile)) {
-      iatFile.createNewFile();
-      for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
-        writer.write(Long.toString(md.getInterArrivalTime()));
-        writer.write(System.lineSeparator());
-      }
-    } catch (final IOException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  static void createTimeLogSummaryHeader(File target) {
-    try {
-      Files.append(Joiner.on(',').join(
-        "problem-class",
-        "instance",
-        "config",
-        "random-seed",
-        "measured-deviations",
-        "sum-deviations",
-        "avg-deviation",
-        "sum-correction",
-        "avg-correction",
-        "avg-interarrival-time",
-        "rt-count",
-        "st-count\n"), target, Charsets.UTF_8);
-    } catch (final IOException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  static void appendTimeLogSummary(SimulationResult sr, File target) {
-
-    if (sr.getResultObject() instanceof ExperimentInfo) {
-
-      final ExperimentInfo info = (ExperimentInfo) sr.getResultObject();
-
-      final int totalMeasuredDeviations = info.getMeasuredDeviations().size();
-      long sumDeviationNs = 0;
-      long sumCorrectionNs = 0;
-      long sumIatNs = 0;
-      for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
-        sumDeviationNs += md.getDeviationNs();
-        sumCorrectionNs += md.getCorrectionNs();
-        sumIatNs += md.getInterArrivalTime();
-      }
-
-      try {
-        Files.append(Joiner.on(',').join(
-          sr.getSimArgs().getScenario().getProblemClass().getId(),
-          sr.getSimArgs().getScenario().getProblemInstanceId(),
-          sr.getSimArgs().getMasConfig().getName(),
-          sr.getSimArgs().getRandomSeed(),
-          totalMeasuredDeviations,
-          sumDeviationNs,
-          totalMeasuredDeviations == 0 ? 0
-              : sumDeviationNs / totalMeasuredDeviations,
-          sumCorrectionNs,
-          totalMeasuredDeviations == 0 ? 0
-              : sumCorrectionNs / totalMeasuredDeviations,
-          sumIatNs / totalMeasuredDeviations,
-          info.getRtCount(),
-          info.getStCount() + "\n"), target, Charsets.UTF_8);
-      } catch (final IOException e) {
-        throw new IllegalStateException(e);
-      }
-
-    }
   }
 
   enum ScenarioConverter implements Function<Scenario, Scenario> {
@@ -424,23 +307,8 @@ public class PerformExperiment {
     }
   }
 
-  static void createCSVWithHeader(File f) {
-    try {
-      Files.createParentDirs(f);
-
-      Files.append(
-        "dynamism,urgency,scale,cost,travel_time,tardiness,over_time,is_valid,"
-            + "scenario_id,random_seed,comp_time,num_vehicles,num_orders\n",
-        f,
-        Charsets.UTF_8);
-    } catch (final IOException e1) {
-      throw new IllegalStateException(e1);
-    }
-  }
-
   static void appendSimResult(SimulationResult sr, File destFile) {
-    final String pc = sr.getSimArgs().getScenario().getProblemClass()
-        .getId();
+    final String pc = sr.getSimArgs().getScenario().getProblemClass().getId();
     final String id = sr.getSimArgs().getScenario().getProblemInstanceId();
     final int numVehicles = FluentIterable
         .from(sr.getSimArgs().getScenario().getEvents())
@@ -585,80 +453,6 @@ public class PerformExperiment {
       throw new IllegalStateException(e);
     }
     return experimentDirectory;
-  }
-
-  static class IncrementalResultWriter implements ResultListener {
-    final File experimentDirectory;
-    final File timeDeviationsDirectory;
-
-    public IncrementalResultWriter(File target) {
-      experimentDirectory = target;
-      timeDeviationsDirectory = new File(target, "time-deviations");
-      timeDeviationsDirectory.mkdirs();
-    }
-
-    @Override
-    public void startComputing(int numberOfSimulations,
-        ImmutableSet<MASConfiguration> configurations,
-        ImmutableSet<Scenario> scenarios,
-        int repetitions) {
-
-      final StringBuilder sb = new StringBuilder("Experiment summary");
-      sb.append(System.lineSeparator())
-          .append("Number of simulations: ")
-          .append(numberOfSimulations)
-          .append(System.lineSeparator())
-          .append("Number of configurations: ")
-          .append(configurations.size())
-          .append(System.lineSeparator())
-          .append("Number of scenarios: ")
-          .append(scenarios.size())
-          .append(System.lineSeparator())
-          .append("Number of repetitions: ")
-          .append(repetitions)
-          .append(System.lineSeparator())
-          .append("Configurations:")
-          .append(System.lineSeparator());
-
-      for (final MASConfiguration config : configurations) {
-        sb.append(config.getName())
-            .append(System.lineSeparator());
-      }
-
-      final File setup = new File(experimentDirectory, "experiment-setup.txt");
-      try {
-        setup.createNewFile();
-        Files.write(sb.toString(), setup, Charsets.UTF_8);
-      } catch (final IOException e) {
-        throw new IllegalStateException(e);
-      }
-    }
-
-    @Override
-    public void receive(SimulationResult result) {
-      final String configName = result.getSimArgs().getMasConfig().getName();
-      final File targetFile =
-        new File(experimentDirectory, configName + ".csv");
-
-      if (!targetFile.exists()) {
-        createCSVWithHeader(targetFile);
-      }
-
-      appendSimResult(result, targetFile);
-
-      final File timeLogResult =
-        new File(experimentDirectory, configName + "-timelog-summary.csv");
-
-      if (!timeLogResult.exists()) {
-        createTimeLogSummaryHeader(timeLogResult);
-      }
-      appendTimeLogSummary(result, timeLogResult);
-      createTimeLog(result, timeDeviationsDirectory);
-    }
-
-    @Override
-    public void doneComputing() {}
-
   }
 
   enum LogProcessor implements PostProcessor<ExperimentInfo> {
