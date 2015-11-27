@@ -210,7 +210,7 @@ public class PerformExperiment {
         .build(objFunc)
         .computeLocal()
         .withRandomSeed(123)
-        .withThreads(1)
+        .withThreads(11)
         .repeat(1)
         .addResultListener(new CommandLineProgress(System.out));
 
