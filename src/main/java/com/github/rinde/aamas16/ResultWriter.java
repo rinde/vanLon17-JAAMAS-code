@@ -102,7 +102,7 @@ abstract class ResultWriter implements ResultListener {
 
       // deletes the file in case it already exists
       configResult.delete();
-      ResultWriter.createCSVWithHeader(configResult);
+      createCSVWithHeader(configResult);
       for (final SimulationResult sr : group) {
         appendSimResult(sr, configResult);
       }
@@ -110,13 +110,15 @@ abstract class ResultWriter implements ResultListener {
 
   }
 
+  abstract Iterable<Enum<?>> getFields();
+
   abstract void appendSimResult(SimulationResult sr, File destFile);
 
-  static void createCSVWithHeader(File f) {
+  void createCSVWithHeader(File f) {
     try {
       Files.createParentDirs(f);
       Files.append(
-        Joiner.on(",").appendTo(new StringBuilder(), OutputFields.values())
+        Joiner.on(",").appendTo(new StringBuilder(), getFields())
             .append(System.lineSeparator()),
         f,
         Charsets.UTF_8);
@@ -165,7 +167,7 @@ abstract class ResultWriter implements ResultListener {
     }
   }
 
-  static void addSimOutputs(ImmutableMap.Builder<OutputFields, Object> map,
+  static void addSimOutputs(ImmutableMap.Builder<Enum<?>, Object> map,
       SimulationResult sr) {
     if (sr.getResultObject() instanceof FailureStrategy) {
       map.put(OutputFields.COST, -1)

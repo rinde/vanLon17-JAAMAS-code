@@ -23,6 +23,7 @@ import com.github.rinde.aamas16.MeasureGendreau.Property;
 import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 
@@ -69,6 +70,18 @@ public class GendreauResultWriter extends ResultWriter {
   }
 
   @Override
+  Iterable<Enum<?>> getFields() {
+    return ImmutableList.<Enum<?>>builder()
+        .add(OutputFields.values())
+        .add(Property.GENDR_ALG)
+        .add(Property.GENDR_COST)
+        .add(Property.GENDR_TT)
+        .add(Property.GENDR_TARD)
+        .add(Property.GENDR_OT)
+        .build();
+  }
+
+  @Override
   void appendSimResult(SimulationResult sr, File destFile) {
     final String pc = sr.getSimArgs().getScenario().getProblemClass().getId();
     final String id = sr.getSimArgs().getScenario().getProblemInstanceId();
@@ -78,21 +91,25 @@ public class GendreauResultWriter extends ResultWriter {
     final int numVehicles = Integer.parseInt(props.get(Property.NUM_VEHICLES));
 
     try {
-      final ImmutableMap.Builder<OutputFields, Object> map =
-        ImmutableMap.<OutputFields, Object>builder()
+      final ImmutableMap.Builder<Enum<?>, Object> map =
+        ImmutableMap.<Enum<?>, Object>builder()
             .put(OutputFields.SCENARIO_ID, scenId)
             .put(OutputFields.DYNAMISM, props.get(Property.DYNAMISM))
             .put(OutputFields.URGENCY, props.get(Property.URGENCY_MEAN))
             .put(OutputFields.SCALE, numVehicles / 10)
             .put(OutputFields.NUM_ORDERS, props.get(Property.NUM_ORDERS))
             .put(OutputFields.NUM_VEHICLES, numVehicles)
-            .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed());
+            .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed())
+            .put(Property.GENDR_ALG, props.get(Property.GENDR_ALG))
+            .put(Property.GENDR_COST, props.get(Property.GENDR_COST))
+            .put(Property.GENDR_TT, props.get(Property.GENDR_TT))
+            .put(Property.GENDR_TARD, props.get(Property.GENDR_TARD))
+            .put(Property.GENDR_OT, props.get(Property.GENDR_OT));
 
       addSimOutputs(map, sr);
 
       final String line = MeasureGendreau
-          .appendValuesTo(new StringBuilder(), map.build(),
-            OutputFields.values())
+          .appendValuesTo(new StringBuilder(), map.build(), getFields())
           .append(System.lineSeparator())
           .toString();
       Files.append(line, destFile, Charsets.UTF_8);

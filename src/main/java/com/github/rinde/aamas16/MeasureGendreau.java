@@ -15,6 +15,8 @@
  */
 package com.github.rinde.aamas16;
 
+import static java.util.Arrays.asList;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,6 +47,115 @@ import com.google.common.io.Files;
 public class MeasureGendreau {
 
   static final String PROPS_FILE = "files/gendreau-properties.csv";
+
+  static final ImmutableMap<String, ImmutableMap<Property, String>> MAP =
+    ImmutableMap.<String, ImmutableMap<Property, String>>builder()
+        .put("1_240_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "336")
+            .put(Property.GENDR_TARD, "65")
+            .put(Property.GENDR_OT, "55")
+            .put(Property.GENDR_COST, "456")
+            .build())
+        .put("2_240_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "386")
+            .put(Property.GENDR_TARD, "68")
+            .put(Property.GENDR_OT, "53")
+            .put(Property.GENDR_COST, "506")
+            .build())
+        .put("3_240_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Adaptive_descent")
+            .put(Property.GENDR_TT, "355")
+            .put(Property.GENDR_TARD, "120")
+            .put(Property.GENDR_OT, "86")
+            .put(Property.GENDR_COST, "562")
+            .build())
+        .put("4_240_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "359")
+            .put(Property.GENDR_TARD, "38")
+            .put(Property.GENDR_OT, "31")
+            .put(Property.GENDR_COST, "428")
+            .build())
+        .put("5_240_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "348")
+            .put(Property.GENDR_TARD, "75")
+            .put(Property.GENDR_OT, "52")
+            .put(Property.GENDR_COST, "476")
+            .build())
+        .put("1_240_33", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "473")
+            .put(Property.GENDR_TARD, "4392")
+            .put(Property.GENDR_OT, "699")
+            .put(Property.GENDR_COST, "5564")
+            .build())
+        .put("2_240_33", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "402")
+            .put(Property.GENDR_TARD, "867")
+            .put(Property.GENDR_OT, "297")
+            .put(Property.GENDR_COST, "1566")
+            .build())
+        .put("3_240_33", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "455")
+            .put(Property.GENDR_TARD, "853")
+            .put(Property.GENDR_OT, "303")
+            .put(Property.GENDR_COST, "1611")
+            .build())
+        .put("4_240_33", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Adaptive_descent")
+            .put(Property.GENDR_TT, "405")
+            .put(Property.GENDR_TARD, "1031")
+            .put(Property.GENDR_OT, "317")
+            .put(Property.GENDR_COST, "1753")
+            .build())
+        .put("5_240_33", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "495")
+            .put(Property.GENDR_TARD, "4121")
+            .put(Property.GENDR_OT, "687")
+            .put(Property.GENDR_COST, "5303")
+            .build())
+        .put("1_450_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "539")
+            .put(Property.GENDR_TARD, "1")
+            .put(Property.GENDR_OT, "0")
+            .put(Property.GENDR_COST, "540")
+            .build())
+        .put("2_450_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Insert+")
+            .put(Property.GENDR_TT, "608")
+            .put(Property.GENDR_TARD, "1")
+            .put(Property.GENDR_OT, "1")
+            .put(Property.GENDR_COST, "610")
+            .build())
+        .put("3_450_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "629")
+            .put(Property.GENDR_TARD, "2")
+            .put(Property.GENDR_OT, "1")
+            .put(Property.GENDR_COST, "632")
+            .build())
+        .put("4_450_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Adaptive_descent")
+            .put(Property.GENDR_TT, "695")
+            .put(Property.GENDR_TARD, "2")
+            .put(Property.GENDR_OT, "1")
+            .put(Property.GENDR_COST, "698")
+            .build())
+        .put("5_450_24", ImmutableMap.<Property, String>builder()
+            .put(Property.GENDR_ALG, "Tabu")
+            .put(Property.GENDR_TT, "694")
+            .put(Property.GENDR_TARD, "0")
+            .put(Property.GENDR_OT, "0")
+            .put(Property.GENDR_COST, "694")
+            .build())
+        .build();
 
   /**
    * @param args
@@ -84,18 +195,20 @@ public class MeasureGendreau {
             .put(Property.URGENCY_SD, urgency.getStandardDeviation() / 60000d)
             .put(Property.NUM_ORDERS, counts.count(AddParcelEvent.class))
             .put(Property.NUM_VEHICLES, counts.count(AddVehicleEvent.class))
+            .putAll(MAP.get(
+              scen.getProblemInstanceId() + scen.getProblemClass().getId()))
             .build();
 
       propsList.add(prop);
     }
 
     final File targetFile = new File(PROPS_FILE);
-    write(propsList, targetFile, Property.values());
+    write(propsList, targetFile, asList(Property.values()));
     System.out.println("Results written to " + targetFile.getAbsolutePath());
   }
 
   static <T extends Enum<?>> void write(
-      Iterable<? extends Map<T, Object>> props, File dest, T[] keys)
+      Iterable<? extends Map<T, Object>> props, File dest, Iterable<T> keys)
           throws IOException {
     final StringBuilder sb =
       Joiner.on(",").appendTo(new StringBuilder(), keys)
@@ -109,13 +222,12 @@ public class MeasureGendreau {
   }
 
   static <T extends Enum<?>> StringBuilder appendValuesTo(StringBuilder sb,
-      Map<T, Object> props, T[] keys) {
+      Map<T, Object> props, Iterable<T> keys) {
     final List<Object> values = new ArrayList<>();
     for (final T p : keys) {
       values.add(props.get(p));
     }
-    Joiner.on(",").appendTo(sb, values)
-        .append(System.lineSeparator());
+    Joiner.on(",").appendTo(sb, values);
     return sb;
   }
 
@@ -153,7 +265,17 @@ public class MeasureGendreau {
 
     NUM_ORDERS,
 
-    NUM_VEHICLES;
+    NUM_VEHICLES,
+
+    GENDR_ALG,
+
+    GENDR_COST,
+
+    GENDR_TT,
+
+    GENDR_TARD,
+
+    GENDR_OT;
 
     @Override
     public String toString() {

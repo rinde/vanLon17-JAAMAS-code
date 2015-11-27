@@ -24,6 +24,7 @@ import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 
@@ -68,8 +69,8 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
           .withKeyValueSeparator(" = ")
           .split(Joiner.on("\n").join(propsStrings));
 
-      final ImmutableMap.Builder<OutputFields, Object> map =
-        ImmutableMap.<OutputFields, Object>builder()
+      final ImmutableMap.Builder<Enum<?>, Object> map =
+        ImmutableMap.<Enum<?>, Object>builder()
             .put(OutputFields.SCENARIO_ID, scenarioName)
             .put(OutputFields.DYNAMISM, properties.get("dynamism_bin"))
             .put(OutputFields.URGENCY, properties.get("urgency"))
@@ -81,14 +82,18 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
       addSimOutputs(map, sr);
 
       final String line = MeasureGendreau
-          .appendValuesTo(new StringBuilder(), map.build(),
-            OutputFields.values())
+          .appendValuesTo(new StringBuilder(), map.build(), getFields())
           .append(System.lineSeparator())
           .toString();
       Files.append(line, destFile, Charsets.UTF_8);
     } catch (final IOException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  @Override
+  Iterable<Enum<?>> getFields() {
+    return ImmutableList.<Enum<?>>copyOf(OutputFields.values());
   }
 
 }
