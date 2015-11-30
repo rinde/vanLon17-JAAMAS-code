@@ -15,10 +15,14 @@
  */
 package com.github.rinde.aamas16;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
+
+import org.joda.time.format.ISODateTimeFormat;
 
 import com.github.rinde.aamas16.PerformExperiment.ExperimentInfo;
 import com.github.rinde.rinsim.core.model.time.MeasuredDeviation;
@@ -44,8 +48,9 @@ abstract class ResultWriter implements ResultListener {
   final File timeDeviationsDirectory;
 
   public ResultWriter(File target) {
-    experimentDirectory = target;
-    timeDeviationsDirectory = new File(target, "time-deviations");
+    experimentDirectory = createExperimentDir(target);
+
+    timeDeviationsDirectory = new File(experimentDirectory, "time-deviations");
     timeDeviationsDirectory.mkdirs();
   }
 
@@ -262,6 +267,26 @@ abstract class ResultWriter implements ResultListener {
     } catch (final IOException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  static File createExperimentDir(File target) {
+    final String timestamp = ISODateTimeFormat.dateHourMinuteSecond()
+        .print(System.currentTimeMillis());
+    final File experimentDirectory = new File(target, timestamp);
+    experimentDirectory.mkdirs();
+
+    final File latest = new File(target, "latest/");
+    if (latest.exists()) {
+      checkState(latest.delete());
+    }
+    try {
+      java.nio.file.Files.createSymbolicLink(
+        latest.toPath(),
+        experimentDirectory.getAbsoluteFile().toPath());
+    } catch (final IOException e) {
+      throw new IllegalStateException(e);
+    }
+    return experimentDirectory;
   }
 
   enum OutputFields {
