@@ -16,6 +16,7 @@
 package com.github.rinde.aamas16;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verifyNotNull;
 
 import java.io.File;
@@ -141,9 +142,7 @@ public class PerformExperiment {
       }
     };
 
-    final File experimentDir =
-      createExperimentDir(
-        new File(RESULTS_MAIN_DIR + "/" + name()));
+    final File experimentDir = new File(RESULTS_MAIN_DIR + "/" + name());
 
     private final Gendreau06ObjectiveFunction objectiveFunction;
 
@@ -181,6 +180,7 @@ public class PerformExperiment {
     final String[] expArgs = new String[args.length - 2];
     System.arraycopy(args, 2, expArgs, 0, args.length - 2);
 
+    createExperimentDir(experimentType.experimentDir);
     final Gendreau06ObjectiveFunction objFunc =
       experimentType.getObjectiveFunction();
 
@@ -228,14 +228,14 @@ public class PerformExperiment {
             .addModel(RealtimeClockLogger.builder())
             .build())
 
-        // cheapest insertion
+    // cheapest insertion
         .addConfiguration(MASConfiguration.builder(
           RtCentral.solverConfigurationAdapt(
             CheapestInsertionHeuristic.supplier(objFunc), "", true))
             .addModel(RealtimeClockLogger.builder())
             .build())
 
-        // 2-opt cheapest insertion
+    // 2-opt cheapest insertion
         .addConfiguration(MASConfiguration.builder(
           RtCentral.solverConfiguration(
             // Central.solverConfiguration(
@@ -247,21 +247,21 @@ public class PerformExperiment {
             .addModel(RealtimeClockLogger.builder())
             .build())
 
-        .showGui(View.builder()
-            .withAutoPlay()
-            .withAutoClose()
-            .withSpeedUp(8)
-            // .withFullScreen()
-            .withTitleAppendix("AAMAS 2016 Experiment")
-            .with(RoadUserRenderer.builder()
-                .withToStringLabel())
-            .with(RouteRenderer.builder())
-            .with(PDPModelRenderer.builder())
-            .with(PlaneRoadModelRenderer.builder())
-            // .with(AuctionPanel.builder())
-            .with(TimeLinePanel.builder())
-            .with(RtSolverPanel.builder())
-            .withResolution(1280, 1024));
+    .showGui(View.builder()
+        .withAutoPlay()
+        .withAutoClose()
+        .withSpeedUp(8)
+        // .withFullScreen()
+        .withTitleAppendix("AAMAS 2016 Experiment")
+        .with(RoadUserRenderer.builder()
+            .withToStringLabel())
+        .with(RouteRenderer.builder())
+        .with(PDPModelRenderer.builder())
+        .with(PlaneRoadModelRenderer.builder())
+        // .with(AuctionPanel.builder())
+        .with(TimeLinePanel.builder())
+        .with(RtSolverPanel.builder())
+        .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
       experimentBuilder.perform(System.out, expArgs);
@@ -321,7 +321,7 @@ public class PerformExperiment {
 
     final File latest = new File(target, "latest/");
     if (latest.exists()) {
-      latest.delete();
+      checkState(latest.delete());
     }
     try {
       java.nio.file.Files.createSymbolicLink(
