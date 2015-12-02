@@ -203,6 +203,29 @@ public class PerformExperiment {
     experimentBuilder
         .usePostProcessor(LogProcessor.INSTANCE)
         .addConfiguration(MASConfiguration.pdptwBuilder()
+            .setName("ReAuction-2optRP-cihBID-BAL")
+            .addEventHandler(AddVehicleEvent.class,
+              DefaultTruckFactory.builder()
+                  .setRoutePlanner(RtSolverRoutePlanner.supplier(opt2))
+                  .setCommunicator(RtSolverBidder.supplier(objFunc, cih,
+                    RtSolverBidder.BidFunctions.BALANCED))
+                  .setLazyComputation(false)
+                  .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
+                  .build())
+            .addModel(AuctionCommModel.builder(DoubleBid.class)
+                .withStopCondition(
+                  AuctionStopConditions.and(
+                    AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+                    AuctionStopConditions.or(
+                      AuctionStopConditions.<DoubleBid>allBidders(),
+                      AuctionStopConditions
+                          .<DoubleBid>maxAuctionDuration(5000)))))
+            .addModel(RtSolverModel.builder()
+                .withThreadPoolSize(3)
+                .withThreadGrouping(true))
+            .addModel(RealtimeClockLogger.builder())
+            .build())
+        .addConfiguration(MASConfiguration.pdptwBuilder()
             .setName("ReAuction-2optRP-cihBID-BAL-HIGH")
             .addEventHandler(AddVehicleEvent.class,
               DefaultTruckFactory.builder()
