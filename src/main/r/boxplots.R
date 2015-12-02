@@ -3,7 +3,7 @@ library("ggplot2")
 library("data.table")
 
 script.dir <- dirname(sys.frame(1)$ofile)
-target.dir <- paste(script.dir,"/../../../files/results/2015-11-18T15:11:29-GENDREAU-250/",sep="")
+target.dir <- paste(script.dir,"/../../../files/results/BEST/GENDREAU/2015-11-30/time-deviations/",sep="")
 
 csv_files <- list.files(path=target.dir,pattern=".*-interarrivaltimes.csv")
 alldata <- NULL
@@ -14,10 +14,6 @@ for( file in csv_files){
   
   table <- data.table(read.csv(paste(target.dir,file,sep=""),col.names=("time")))
   table <- table[,list(time=(time/1000000)-250)]
-  
- 
-  
- 
   
   # if seed is negative (contains a '-') we will find an empty part at this position
   if( parts[size-2] == ''){
