@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +39,7 @@ import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
 import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
+import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.central.rt.RtSolverModel;
@@ -66,8 +68,10 @@ import com.github.rinde.rinsim.pdptw.common.RouteRenderer;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
 import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
 import com.github.rinde.rinsim.scenario.Scenario;
+import com.github.rinde.rinsim.scenario.ScenarioConverters;
 import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.scenario.StopConditions;
+import com.github.rinde.rinsim.scenario.TimedEvent;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06Parser;
@@ -98,12 +102,23 @@ public class PerformExperiment {
       @Override
       void apply(Builder bldr) {
         bldr.addScenarios(
-          FileProvider.builder()
-              .add(Paths.get("files/gendreau2006/requests"))
+          FileProvider.builder().add(Paths.get("files/gendreau2006/requests"))
               .filter("glob:**req_rapide_**"))
             .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
               Gendreau06Parser.reader()))
             .addResultListener(new GendreauResultWriter(experimentDir));;
+      }
+    },
+
+    GENDREAU_OFFLINE(Gendreau06ObjectiveFunction.instance()) {
+      @Override
+      void apply(Builder bldr) {
+        bldr.addScenarios(
+          FileProvider.builder().add(Paths.get("files/gendreau2006/requests"))
+              .filter("glob:**req_rapide_**"))
+            .setScenarioReader(Functions.compose(ScenarioConverter.TO_OFFLINE,
+              Gendreau06Parser.reader()))
+            .addResultListener(new GendreauResultWriter(experimentDir));
       }
     },
 
@@ -113,10 +128,8 @@ public class PerformExperiment {
     VAN_LON15(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder()
-              .add(Paths.get(VANLON_HOLVOET_DATASET))
-              .filter("glob:**[0-9].scen"))
+        bldr.addScenarios(FileProvider.builder()
+            .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
             .setScenarioReader(
               ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
             .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
@@ -130,9 +143,9 @@ public class PerformExperiment {
     TIME_DEVIATION(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(FileProvider.builder()
-            .add(Paths.get(VANLON_HOLVOET_DATASET))
-            .filter("glob:**0.50-20-10.00-[0-9].scen"))
+        bldr.addScenarios(
+          FileProvider.builder().add(Paths.get(VANLON_HOLVOET_DATASET))
+              .filter("glob:**0.50-20-10.00-[0-9].scen"))
             .setScenarioReader(
               ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
             .repeat(10)
@@ -196,12 +209,12 @@ public class PerformExperiment {
         .withRandomSeed(123)
         .withThreads(11)
         .repeat(1)
-        .addResultListener(new CommandLineProgress(System.out));
+        .addResultListener(new CommandLineProgress(System.out))
+        .usePostProcessor(LogProcessor.INSTANCE);
 
     experimentType.apply(experimentBuilder);
 
     experimentBuilder
-        .usePostProcessor(LogProcessor.INSTANCE)
         .addConfiguration(MASConfiguration.pdptwBuilder()
             .setName("ReAuction-2optRP-cihBID-BAL")
             .addEventHandler(AddVehicleEvent.class,
@@ -282,13 +295,23 @@ public class PerformExperiment {
         // 2-opt cheapest insertion
         .addConfiguration(MASConfiguration.builder(
           RtCentral.solverConfiguration(
-            // Central.solverConfiguration(
             Opt2.builder()
                 .withObjectiveFunction(objFunc)
                 .buildRealtimeSolverSupplier(),
             ""))
-            // , true))
             .addModel(RealtimeClockLogger.builder())
+            .build())
+
+        .addConfiguration(MASConfiguration.builder(
+          Central.solverConfiguration(
+            CheapestInsertionHeuristic.supplier(objFunc)))
+            .build())
+
+        .addConfiguration(MASConfiguration.builder(
+          Central.solverConfiguration(
+            Opt2.builder()
+                .withObjectiveFunction(objFunc)
+                .buildSolverSupplier()))
             .build())
 
         .showGui(View.builder()
@@ -335,6 +358,30 @@ public class PerformExperiment {
               StopConditions.limitedTime(10 * 60 * 60 * 1000)))
             .build();
       }
+    },
+    TO_OFFLINE {
+      @Override
+      public Scenario apply(Scenario input) {
+        final Scenario s = ScenarioConverters
+            .eventConverter(new Function<TimedEvent, TimedEvent>() {
+          @Override
+          public TimedEvent apply(TimedEvent input) {
+            if (input instanceof AddParcelEvent) {
+              return AddParcelEvent.create(
+                Parcel.builder(((AddParcelEvent) input).getParcelDTO())
+                    .orderAnnounceTime(-1)
+                    .buildDTO());
+            }
+            return input;
+          }
+        }).apply(input);
+        return Scenario.builder(s)
+            .removeModelsOfType(TimeModel.AbstractBuilder.class)
+            .addModel(TimeModel.builder().withTickLength(250))
+            .setStopCondition(StopConditions.or(s.getStopCondition(),
+              StopConditions.limitedTime(10 * 60 * 60 * 1000)))
+            .build();
+      }
     }
   }
 
@@ -361,16 +408,23 @@ public class PerformExperiment {
     INSTANCE {
       @Override
       public ExperimentInfo collectResults(Simulator sim, SimArgs args) {
-        final RealtimeClockLogger logger =
-          sim.getModelProvider().getModel(RealtimeClockLogger.class);
 
-        // logger.getDeviations()
+        @Nullable
+        final RealtimeClockLogger logger =
+          sim.getModelProvider().tryGetModel(RealtimeClockLogger.class);
 
         final StatisticsDTO stats =
           PostProcessors.statisticsPostProcessor().collectResults(sim, args);
 
         System.out.println("success: " + args);
 
+        if (logger == null) {
+          return ExperimentInfo.create(new ArrayList<LogEntry>(),
+            0,
+            sim.getCurrentTime() / sim.getTimeStep(),
+            stats,
+            ImmutableList.<MeasuredDeviation>of());
+        }
         return ExperimentInfo.create(logger.getLog(), logger.getRtCount(),
           logger.getStCount(), stats, logger.getDeviations());
       }

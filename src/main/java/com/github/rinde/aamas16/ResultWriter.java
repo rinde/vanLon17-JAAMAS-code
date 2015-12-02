@@ -162,7 +162,8 @@ abstract class ResultWriter implements ResultListener {
           sumCorrectionNs,
           totalMeasuredDeviations == 0 ? 0
               : sumCorrectionNs / totalMeasuredDeviations,
-          sumIatNs / totalMeasuredDeviations,
+          totalMeasuredDeviations == 0 ? 0
+              : sumIatNs / totalMeasuredDeviations,
           info.getRtCount(),
           info.getStCount() + "\n"), target, Charsets.UTF_8);
       } catch (final IOException e) {
