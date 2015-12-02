@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
+import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
@@ -202,11 +203,35 @@ public class PerformExperiment {
     experimentBuilder
         .usePostProcessor(LogProcessor.INSTANCE)
         .addConfiguration(MASConfiguration.pdptwBuilder()
-            .setName("ReAuction-2optRP-cihBID")
+            .setName("ReAuction-2optRP-cihBID-BAL-HIGH")
             .addEventHandler(AddVehicleEvent.class,
               DefaultTruckFactory.builder()
                   .setRoutePlanner(RtSolverRoutePlanner.supplier(opt2))
-                  .setCommunicator(RtSolverBidder.supplier(objFunc, cih))
+                  .setCommunicator(RtSolverBidder.supplier(objFunc, cih,
+                    RtSolverBidder.BidFunctions.BALANCED_HIGH))
+                  .setLazyComputation(false)
+                  .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
+                  .build())
+            .addModel(AuctionCommModel.builder(DoubleBid.class)
+                .withStopCondition(
+                  AuctionStopConditions.and(
+                    AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+                    AuctionStopConditions.or(
+                      AuctionStopConditions.<DoubleBid>allBidders(),
+                      AuctionStopConditions
+                          .<DoubleBid>maxAuctionDuration(5000)))))
+            .addModel(RtSolverModel.builder()
+                .withThreadPoolSize(3)
+                .withThreadGrouping(true))
+            .addModel(RealtimeClockLogger.builder())
+            .build())
+        .addConfiguration(MASConfiguration.pdptwBuilder()
+            .setName("ReAuction-2optRP-cihBID-BAL-LOW")
+            .addEventHandler(AddVehicleEvent.class,
+              DefaultTruckFactory.builder()
+                  .setRoutePlanner(RtSolverRoutePlanner.supplier(opt2))
+                  .setCommunicator(RtSolverBidder.supplier(objFunc, cih,
+                    RtSolverBidder.BidFunctions.BALANCED_LOW))
                   .setLazyComputation(false)
                   .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
                   .build())
@@ -254,7 +279,7 @@ public class PerformExperiment {
             .with(RouteRenderer.builder())
             .with(PDPModelRenderer.builder())
             .with(PlaneRoadModelRenderer.builder())
-            // .with(AuctionPanel.builder())
+            .with(AuctionPanel.builder())
             .with(TimeLinePanel.builder())
             .with(RtSolverPanel.builder())
             .withResolution(1280, 1024));
