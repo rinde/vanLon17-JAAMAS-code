@@ -216,12 +216,12 @@ public class PerformExperiment {
 
     experimentBuilder
         .addConfiguration(MASConfiguration.pdptwBuilder()
-            .setName("ReAuction-2optRP-cihBID-BAL")
+            .setName("ReAuction-2optRP-cihBID")
             .addEventHandler(AddVehicleEvent.class,
               DefaultTruckFactory.builder()
                   .setRoutePlanner(RtSolverRoutePlanner.supplier(opt2))
                   .setCommunicator(RtSolverBidder.supplier(objFunc, cih,
-                    RtSolverBidder.BidFunctions.BALANCED))
+                    RtSolverBidder.BidFunctions.PLAIN))
                   .setLazyComputation(false)
                   .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
                   .build())

@@ -7,7 +7,8 @@ script.dir <- dirname(sys.frame(1)$ofile)
 source(paste(script.dir,"multiplot.r",sep="/"))
 target.dir <- paste(script.dir,"/../../../files/results/BEST/GENDREAU/",sep="")
 
-files <- c("2015-11-30/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
+files <- c("2015-12-02T19:55:45-OFFLINE/Central-Opt2Bfs(GendrOF(30.0))-final.csv",
+           "2015-11-30/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
            "2015-12-02T16:53:42/ReAuction-2optRP-cihBID-OVERTIME-final.csv",
            "2015-12-02T16:13:32/ReAuction-2optRP-cihBID-BALANCE-final.csv",
            "2015-12-02T18:21:37/ReAuction-2optRP-cihBID-BAL-final.csv",
@@ -15,7 +16,6 @@ files <- c("2015-11-30/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
            "2015-12-02T18:21:37/ReAuction-2optRP-cihBID-BAL-HIGH-final.csv",
            "2015-11-30/ReAuction-2optRP-cihBID-final.csv",
            "2015-11-30/RtCentral-CIH(GendrOF(30.0))-final.csv"
-           
            )
 
 selectData <- function(data,columns,alg_name){
