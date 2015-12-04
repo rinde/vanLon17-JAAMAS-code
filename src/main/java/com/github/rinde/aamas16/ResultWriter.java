@@ -24,6 +24,7 @@ import java.util.Collection;
 
 import org.joda.time.format.ISODateTimeFormat;
 
+import com.github.rinde.aamas16.PerformExperiment.AuctionStats;
 import com.github.rinde.aamas16.PerformExperiment.ExperimentInfo;
 import com.github.rinde.rinsim.core.model.time.MeasuredDeviation;
 import com.github.rinde.rinsim.experiment.Experiment.SimArgs;
@@ -193,6 +194,20 @@ abstract class ResultWriter implements ResultListener {
           .put(OutputFields.OVER_TIME, objFunc.overTime(stats))
           .put(OutputFields.IS_VALID, objFunc.isValidResult(stats))
           .put(OutputFields.COMP_TIME, stats.computationTime);
+
+      if (ei.getAuctionStats().isPresent()) {
+        final AuctionStats aStats = ei.getAuctionStats().get();
+        map.put(OutputFields.NUM_REAUCTIONS, aStats.getNumReauctions())
+            .put(OutputFields.NUM_UNSUC_REAUCTIONS,
+              aStats.getNumUnsuccesfulReauctions())
+            .put(OutputFields.NUM_FAILED_REAUCTIONS,
+              aStats.getNumFailedReauctions());
+      } else {
+        map.put(OutputFields.NUM_REAUCTIONS, 0)
+            .put(OutputFields.NUM_UNSUC_REAUCTIONS, 0)
+            .put(OutputFields.NUM_FAILED_REAUCTIONS, 0);
+      }
+
       if (!objFunc.isValidResult(stats)) {
         System.err.println("WARNING: FOUND AN INVALID RESULT: ");
         System.err.println(map.build());
@@ -315,7 +330,13 @@ abstract class ResultWriter implements ResultListener {
 
     NUM_VEHICLES,
 
-    NUM_ORDERS;
+    NUM_ORDERS,
+
+    NUM_REAUCTIONS,
+
+    NUM_UNSUC_REAUCTIONS,
+
+    NUM_FAILED_REAUCTIONS;
 
     @Override
     public String toString() {

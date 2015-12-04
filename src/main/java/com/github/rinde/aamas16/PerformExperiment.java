@@ -386,6 +386,22 @@ public class PerformExperiment {
   }
 
   @AutoValue
+  abstract static class AuctionStats {
+    abstract int getNumParcels();
+
+    abstract int getNumReauctions();
+
+    abstract int getNumUnsuccesfulReauctions();
+
+    abstract int getNumFailedReauctions();
+
+    static AuctionStats create(int numP, int numR, int numUn, int numF) {
+      return new AutoValue_PerformExperiment_AuctionStats(numP, numR, numUn,
+          numF);
+    }
+  }
+
+  @AutoValue
   abstract static class ExperimentInfo {
     abstract List<LogEntry> getLog();
 
@@ -397,10 +413,13 @@ public class PerformExperiment {
 
     abstract ImmutableList<MeasuredDeviation> getMeasuredDeviations();
 
+    abstract Optional<AuctionStats> getAuctionStats();
+
     static ExperimentInfo create(List<LogEntry> log, long rt, long st,
-        StatisticsDTO stats, ImmutableList<MeasuredDeviation> dev) {
+        StatisticsDTO stats, ImmutableList<MeasuredDeviation> dev,
+        Optional<AuctionStats> aStats) {
       return new AutoValue_PerformExperiment_ExperimentInfo(log, rt, st, stats,
-          dev);
+          dev, aStats);
     }
   }
 
@@ -413,6 +432,22 @@ public class PerformExperiment {
         final RealtimeClockLogger logger =
           sim.getModelProvider().tryGetModel(RealtimeClockLogger.class);
 
+        @Nullable
+        final AuctionCommModel<?> auctionModel =
+          sim.getModelProvider().tryGetModel(AuctionCommModel.class);
+
+        final Optional<AuctionStats> aStats;
+        if (auctionModel == null) {
+          aStats = Optional.absent();
+        } else {
+          final int parcels = auctionModel.getNumParcels();
+          final int reauctions = auctionModel.getNumAuctions() - parcels;
+          final int unsuccessful = auctionModel.getNumUnsuccesfulAuctions();
+          final int failed = auctionModel.getNumFailedAuctions();
+          aStats = Optional.of(
+            AuctionStats.create(parcels, reauctions, unsuccessful, failed));
+        }
+
         final StatisticsDTO stats =
           PostProcessors.statisticsPostProcessor().collectResults(sim, args);
 
@@ -423,10 +458,11 @@ public class PerformExperiment {
             0,
             sim.getCurrentTime() / sim.getTimeStep(),
             stats,
-            ImmutableList.<MeasuredDeviation>of());
+            ImmutableList.<MeasuredDeviation>of(),
+            aStats);
         }
         return ExperimentInfo.create(logger.getLog(), logger.getRtCount(),
-          logger.getStCount(), stats, logger.getDeviations());
+          logger.getStCount(), stats, logger.getDeviations(), aStats);
       }
 
       @Override
