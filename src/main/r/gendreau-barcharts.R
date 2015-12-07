@@ -7,15 +7,24 @@ script.dir <- dirname(sys.frame(1)$ofile)
 source(paste(script.dir,"multiplot.r",sep="/"))
 target.dir <- paste(script.dir,"/../../../files/results/BEST/GENDREAU/",sep="")
 
-files <- c("2015-12-02T19:55:45-OFFLINE/Central-Opt2Bfs(GendrOF(30.0))-final.csv",
-           "2015-11-30/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
-           "2015-12-02T16:53:42/ReAuction-2optRP-cihBID-OVERTIME-final.csv",
-           "2015-12-02T16:13:32/ReAuction-2optRP-cihBID-BALANCE-final.csv",
-           "2015-12-02T18:21:37/ReAuction-2optRP-cihBID-BAL-final.csv",
-           "2015-12-02T18:21:37/ReAuction-2optRP-cihBID-BAL-LOW-final.csv",
-           "2015-12-02T18:21:37/ReAuction-2optRP-cihBID-BAL-HIGH-final.csv",
-           "2015-11-30/ReAuction-2optRP-cihBID-final.csv",
-           "2015-11-30/RtCentral-CIH(GendrOF(30.0))-final.csv"
+files <- c(
+  "2015-12-04T16:03:02/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
+  "2015-12-04T16:03:02/ReAuction-2optRP-cihBID-final.csv"
+          #"2015-12-02T19:55:45-OFFLINE/Central-Opt2Bfs(GendrOF(30.0))-final.csv",
+           #"2015-11-30/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
+          # "2015-12-04T15:12:52/ReAuction-2optRP-cihBID-final.csv",
+          # "2015-12-04T13:51:34/ReAuction-2optRP-cihBID-final.csv",
+          # "2015-12-03T16:52:06/ReAuction-2optRP-cihBID-final.csv",
+          # "2015-12-03T16:12:53/ReAuction-2optRP-cihBID-final.csv",
+          # "2015-12-03T14:25:13/ReAuction-2optRP-cihBID-final.csv",
+          # "2015-12-02T16:53:42/ReAuction-2optRP-cihBID-OVERTIME-final.csv",
+          # "2015-12-02T16:13:32/ReAuction-2optRP-cihBID-BALANCE-final.csv",
+          # "2015-12-02T18:21:37/ReAuction-2optRP-cihBID-BAL-final.csv",
+          # "2015-12-02T18:21:37/ReAuction-2optRP-cihBID-BAL-LOW-final.csv",
+          # "2015-12-02T18:21:37/ReAuction-2optRP-cihBID-BAL-HIGH-final.csv",
+          # "2015-11-30/ReAuction-2optRP-cihBID-final.csv"
+          # "2015-11-30/RtCentral-CIH(GendrOF(30.0))-final.csv"
+          
            )
 
 selectData <- function(data,columns,alg_name){
@@ -29,8 +38,28 @@ plot <- function(data,name){
   melted <- melt(data,id.vars=c("scenario_id","class","alg"),measure.vars=c("travel_time","tardiness","over_time"))
   # reorder such that appearance in data frame is used as plot order
   melted$alg2 <- factor(melted$alg, as.character(melted$alg))
-  plot<-ggplot(melted, aes(x=alg2,y=value,fill=variable)) + 
+  
+  means <- dcast(melted,scenario_id+class+alg2~variable,mean)
+  melted_means <- melt(means,id.vars=c("class","alg2"),measure.vars=c("travel_time","tardiness","over_time"))
+  means2 <- dcast(melted_means,class+alg2~variable,sum)
+  melted_means2 <- melt(means2,id.vars=c("class","alg2"),measure.vars=c("travel_time","tardiness","over_time"))
+  
+  sds <- dcast(melted,scenario_id+class+alg2~variable,sd)
+  melted_sds <- melt(sds,id.vars=c("class","alg2"),measure.vars=c("travel_time","tardiness","over_time"))#,measure.vars=c("travel_time_sd","tardiness_sd","over_time_sd"))
+  sds2 <- dcast(melted_sds,class+alg2~variable,sum)
+  melted_sds2 <- melt(sds2,id.vars=c("class","alg2"),measure.vars=c("travel_time","tardiness","over_time"))#,measure.vars=c("travel_time_sd","tardiness_sd","over_time_sd"))
+  
+  melted_means2[,"sd"] <- melted_sds2$value
+  #total <- merge(melted_means,melted_sds,by=c("class","alg2","variable"),suffixes=c(".mean",".sd"))
+#  print(melted_means)
+ 
+#  melted_total <-  melt(total,id.vars=c("scenario_id","alg2"),measure.vars=c("travel_time","tardiness","over_time","travel_time_sd","tardiness_sd","over_time_sd"))
+  
+  limits <- aes(ymax = value + sd, ymin=value - sd)
+  
+  plot<-ggplot(melted_means2, aes(x=alg2,y=value,fill=variable)) + 
     geom_bar(stat='identity') + 
+    geom_errorbar(stat='identity',limits) +
     labs(title=melted$class[1],y="cost",x="algorithm") +
     theme(legend.position="top") +
     scale_fill_brewer(palette="Set2") +
