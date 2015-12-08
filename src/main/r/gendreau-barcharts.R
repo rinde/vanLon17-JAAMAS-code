@@ -8,11 +8,11 @@ source(paste(script.dir,"multiplot.r",sep="/"))
 target.dir <- paste(script.dir,"/../../../files/results/BEST/GENDREAU/",sep="")
 
 files <- c(
+  "2015-12-02T19:55:45-OFFLINE/Central-Opt2Bfs(GendrOF(30.0))-final.csv",
   "2015-12-04T16:03:02/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
-  "2015-12-04T16:03:02/ReAuction-2optRP-cihBID-final.csv"
-          #"2015-12-02T19:55:45-OFFLINE/Central-Opt2Bfs(GendrOF(30.0))-final.csv",
+  "2015-12-04T16:03:02/ReAuction-2optRP-cihBID-final.csv",
            #"2015-11-30/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
-          # "2015-12-04T15:12:52/ReAuction-2optRP-cihBID-final.csv",
+           "2015-12-04T15:12:52/ReAuction-2optRP-cihBID-final.csv"
           # "2015-12-04T13:51:34/ReAuction-2optRP-cihBID-final.csv",
           # "2015-12-03T16:52:06/ReAuction-2optRP-cihBID-final.csv",
           # "2015-12-03T16:12:53/ReAuction-2optRP-cihBID-final.csv",
@@ -44,18 +44,36 @@ plot <- function(data,name){
   means2 <- dcast(melted_means,class+alg2~variable,sum)
   melted_means2 <- melt(means2,id.vars=c("class","alg2"),measure.vars=c("travel_time","tardiness","over_time"))
   
-  sds <- dcast(melted,scenario_id+class+alg2~variable,sd)
+  # to sum multiple standard deviations, we average the variances and then take the square root
+  sds <- dcast(melted,scenario_id+class+alg2~variable,var)
   melted_sds <- melt(sds,id.vars=c("class","alg2"),measure.vars=c("travel_time","tardiness","over_time"))#,measure.vars=c("travel_time_sd","tardiness_sd","over_time_sd"))
-  sds2 <- dcast(melted_sds,class+alg2~variable,sum)
+  sds2 <- dcast(melted_sds,class+alg2~variable,mean)
   melted_sds2 <- melt(sds2,id.vars=c("class","alg2"),measure.vars=c("travel_time","tardiness","over_time"))#,measure.vars=c("travel_time_sd","tardiness_sd","over_time_sd"))
   
-  melted_means2[,"sd"] <- melted_sds2$value
+  melted_means2[,"sd"] <- sqrt(melted_sds2$value)
   #total <- merge(melted_means,melted_sds,by=c("class","alg2","variable"),suffixes=c(".mean",".sd"))
 #  print(melted_means)
  
 #  melted_total <-  melt(total,id.vars=c("scenario_id","alg2"),measure.vars=c("travel_time","tardiness","over_time","travel_time_sd","tardiness_sd","over_time_sd"))
   
-  limits <- aes(ymax = value + sd, ymin=value - sd)
+  print(melted_means2)
+  limits <- aes(ymax = ymax, ymin=ymin)
+  print(limits)
+  #limits[variable=="tardiness"]
+  
+  # move the error bars to their respective positions. they need to be shifted because we are creating a stacked bar chart.
+  melted_means2[,"ymax"] <- melted_means2$value + melted_means2$sd
+  melted_means2[,"ymin"] <- melted_means2$value - melted_means2$sd
+  
+  melted_means2[melted_means2$variable=="tardiness", ] <- transform(melted_means2[melted_means2$variable=="tardiness", ],
+                    ymin = ymin + melted_means2[melted_means2$variable=="travel_time","value"],
+                    ymax = ymax + melted_means2[melted_means2$variable=="travel_time","value"]
+  )
+                    
+  melted_means2[melted_means2$variable=="over_time", ] <- transform(melted_means2[melted_means2$variable=="over_time", ],
+                    ymin = ymin + melted_means2[melted_means2$variable=="travel_time","value"] + melted_means2[melted_means2$variable=="tardiness","value"],
+                    ymax = ymax + melted_means2[melted_means2$variable=="travel_time","value"] + melted_means2[melted_means2$variable=="tardiness","value"]
+   )
   
   plot<-ggplot(melted_means2, aes(x=alg2,y=value,fill=variable)) + 
     geom_bar(stat='identity') + 
