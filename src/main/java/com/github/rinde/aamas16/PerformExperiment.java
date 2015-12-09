@@ -229,7 +229,7 @@ public class PerformExperiment {
                 .withStopCondition(
                   AuctionStopConditions.and(
                     AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
-                    AuctionStopConditions.or(
+                    AuctionStopConditions.<DoubleBid>or(
                       AuctionStopConditions.<DoubleBid>allBidders(),
                       AuctionStopConditions
                           .<DoubleBid>maxAuctionDuration(5000)))))

@@ -15,6 +15,7 @@
  */
 package com.github.rinde.aamas16;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.asList;
 
 import java.io.File;
@@ -225,6 +226,7 @@ public class MeasureGendreau {
       Map<T, Object> props, Iterable<T> keys) {
     final List<Object> values = new ArrayList<>();
     for (final T p : keys) {
+      checkArgument(props.containsKey(p));
       values.add(props.get(p));
     }
     Joiner.on(",").appendTo(sb, values);

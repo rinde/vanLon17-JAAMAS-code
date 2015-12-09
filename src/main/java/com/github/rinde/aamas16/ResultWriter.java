@@ -182,7 +182,10 @@ abstract class ResultWriter implements ResultListener {
           .put(OutputFields.TARDINESS, -1)
           .put(OutputFields.OVER_TIME, -1)
           .put(OutputFields.IS_VALID, false)
-          .put(OutputFields.COMP_TIME, -1);
+          .put(OutputFields.COMP_TIME, -1)
+          .put(OutputFields.NUM_REAUCTIONS, -1)
+          .put(OutputFields.NUM_UNSUC_REAUCTIONS, -1)
+          .put(OutputFields.NUM_FAILED_REAUCTIONS, -1);
     } else {
       final ExperimentInfo ei = (ExperimentInfo) sr.getResultObject();
       final StatisticsDTO stats = ei.getStats();
