@@ -8,11 +8,30 @@ source(paste(script.dir,"multiplot.r",sep="/"))
 target.dir <- paste(script.dir,"/../../../files/results/BEST/GENDREAU/",sep="")
 
 files <- c(
-  "2015-12-02T19:55:45-OFFLINE/Central-Opt2Bfs(GendrOF(30.0))-final.csv",
+  #"2015-12-02T19:55:45-OFFLINE/Central-Opt2Bfs(GendrOF(30.0))-final.csv",
   "2015-12-04T16:03:02/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
+  "2015-12-09T17:23:37/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
+  
   "2015-12-04T16:03:02/ReAuction-2optRP-cihBID-final.csv",
-           #"2015-11-30/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
-           "2015-12-04T15:12:52/ReAuction-2optRP-cihBID-final.csv"
+   #"2015-11-30/RtCentral-Opt2BfsRT(GendrOF(30.0))-final.csv",
+  #"2015-12-04T15:12:52/ReAuction-2optRP-cihBID-final.csv",
+  "2015-12-09T11:42:04/ReAuction-2optRP-cihBID-final.csv",
+  "2015-12-09T14:16:57/ReAuction-2optRP-cihBID-final.csv",
+  "2015-12-09T17:23:37/ReAuction-2optRP-cihBID-final.csv",
+  
+  "2015-12-09T14:16:57/ReAuction-2optRP-cihBID-BAL-HIGH-final.csv",
+  "2015-12-09T11:42:04/ReAuction-2optRP-cihBID-BAL-HIGH-final.csv",
+  "2015-12-09T17:23:37/ReAuction-2optRP-cihBID-BAL-HIGH-final.csv",
+  
+  "2015-12-09T11:42:04/ReAuction-2optRP-cihBID-BAL-LOW-final.csv",
+  "2015-12-09T14:16:57/ReAuction-2optRP-cihBID-BAL-LOW-final.csv",
+  "2015-12-09T17:23:37/ReAuction-2optRP-cihBID-BAL-LOW-final.csv"
+  
+  
+  
+  #"2015-12-09T17:23:37/RtCentral-CIH(GendrOF(30.0))-final.csv"
+  
+  
           # "2015-12-04T13:51:34/ReAuction-2optRP-cihBID-final.csv",
           # "2015-12-03T16:52:06/ReAuction-2optRP-cihBID-final.csv",
           # "2015-12-03T16:12:53/ReAuction-2optRP-cihBID-final.csv",
