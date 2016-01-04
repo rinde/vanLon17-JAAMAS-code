@@ -39,6 +39,7 @@ import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
 import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
+import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolver;
 import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
@@ -313,6 +314,10 @@ public class PerformExperiment {
                 .withObjectiveFunction(objFunc)
                 .buildSolverSupplier()))
             .build())
+
+        .addConfiguration(
+          Central.solverConfiguration(
+            OptaplannerSolver.validatedSupplier(1L, 30d)))
 
         .showGui(View.builder()
             .withAutoPlay()
