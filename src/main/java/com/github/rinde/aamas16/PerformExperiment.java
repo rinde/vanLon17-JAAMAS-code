@@ -124,7 +124,7 @@ public class PerformExperiment {
     },
 
     /**
-     * Experiment on the Van Lon & Holvoet (2015) dataset.
+     * Experiment using the Van Lon & Holvoet (2015) dataset.
      */
     VAN_LON15(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
