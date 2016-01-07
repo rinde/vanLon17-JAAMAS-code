@@ -25,7 +25,7 @@
 		</problemBenchmarks>
 		<solver>
 			<!-- Common solver configuration -->
-			<environmentMode>FULL_ASSERT</environmentMode>
+			<environmentMode>REPRODUCIBLE</environmentMode>
 			<randomType>MERSENNE_TWISTER</randomType>
 			<solutionClass>com.github.rinde.logistics.pdptw.solver.optaplanner.PDPSolution</solutionClass>
             <entityClass>com.github.rinde.logistics.pdptw.solver.optaplanner.ParcelVisit</entityClass>
