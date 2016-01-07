@@ -2,6 +2,7 @@
 <plannerBenchmark>
 	<benchmarkDirectory>files/results/OPTAPLANNER_BENCHMARK</benchmarkDirectory>
 	<warmUpSecondsSpentLimit>30</warmUpSecondsSpentLimit>
+	<parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
 
 	<inheritedSolverBenchmark>
 		<problemBenchmarks>
