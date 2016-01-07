@@ -30,9 +30,11 @@ import com.github.rinde.rinsim.central.Solvers.SimulationConverter;
 import com.github.rinde.rinsim.central.Solvers.SolveArgs;
 import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.core.Simulator;
-import com.github.rinde.rinsim.experiment.MASConfiguration;
+import com.github.rinde.rinsim.pdptw.common.AddDepotEvent;
+import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
 import com.github.rinde.rinsim.scenario.ScenarioController;
+import com.github.rinde.rinsim.scenario.TimeOutEvent;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06Parser;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06Scenario;
 
@@ -61,8 +63,10 @@ public class OptaplannerGendreauIO implements SolutionFileIO {
 
     final ScenarioController.Builder scenContrBuilder =
       ScenarioController.builder(scenario)
-          .withEventHandlers(
-            MASConfiguration.pdptwBuilder().build().getEventHandlers())
+          .withEventHandler(TimeOutEvent.class, TimeOutEvent.ignoreHandler())
+          .withEventHandler(AddDepotEvent.class, AddDepotEvent.defaultHandler())
+          .withEventHandler(AddParcelEvent.class,
+            AddParcelEvent.defaultHandler())// namedHandler())
           .withEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler());
 
     final Simulator sim = Simulator.builder()

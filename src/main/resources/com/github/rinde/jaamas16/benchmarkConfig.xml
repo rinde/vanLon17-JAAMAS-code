@@ -1,13 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plannerBenchmark>
-	<benchmarkDirectory>files/results/OPTAPLANNER_BENCHMARK
-	</benchmarkDirectory>
-	<warmUpSecondsSpentLimit>1</warmUpSecondsSpentLimit>
+	<benchmarkDirectory>files/results/OPTAPLANNER_BENCHMARK</benchmarkDirectory>
+	<warmUpSecondsSpentLimit>30</warmUpSecondsSpentLimit>
 
 	<inheritedSolverBenchmark>
 		<problemBenchmarks>
 		<solutionFileIOClass>com.github.rinde.aamas16.OptaplannerGendreauIO</solutionFileIOClass>
 			<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_24</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_2_240_24</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_3_240_24</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_4_240_24</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_5_240_24</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_33</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_2_240_33</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_3_240_33</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_4_240_33</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_5_240_33</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_450_24</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_2_450_24</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_3_450_24</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_4_450_24</inputSolutionFile>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_5_450_24</inputSolutionFile>
 		</problemBenchmarks>
 		<solver>
 			<!-- Common solver configuration -->
@@ -23,6 +36,7 @@
             </scoreDirectorFactory>
             
             <termination>
+                  <unimprovedSecondsSpentLimit>60</unimprovedSecondsSpentLimit>
             </termination>
             
 			<localSearch>
