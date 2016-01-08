@@ -1,49 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plannerBenchmark>
 	<benchmarkDirectory>files/results/OPTAPLANNER_BENCHMARK</benchmarkDirectory>
-	<warmUpSecondsSpentLimit>30</warmUpSecondsSpentLimit>
+	<warmUpSecondsSpentLimit>1</warmUpSecondsSpentLimit>
 	<parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
 
 	<inheritedSolverBenchmark>
 		<problemBenchmarks>
-		<solutionFileIOClass>com.github.rinde.aamas16.OptaplannerGendreauIO</solutionFileIOClass>
+			<solutionFileIOClass>com.github.rinde.aamas16.OptaplannerGendreauIO</solutionFileIOClass>
 			<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_24</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_2_240_24</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_3_240_24</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_4_240_24</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_5_240_24</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_33</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_2_240_33</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_3_240_33</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_4_240_33</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_5_240_33</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_450_24</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_2_450_24</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_3_450_24</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_4_450_24</inputSolutionFile>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_5_450_24</inputSolutionFile>
+			<!-- <inputSolutionFile>files/gendreau2006/requests/req_rapide_2_240_24</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_3_240_24</inputSolutionFile> 
+				<inputSolutionFile>files/gendreau2006/requests/req_rapide_4_240_24</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_5_240_24</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_33</inputSolutionFile> 
+				<inputSolutionFile>files/gendreau2006/requests/req_rapide_2_240_33</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_3_240_33</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_4_240_33</inputSolutionFile> 
+				<inputSolutionFile>files/gendreau2006/requests/req_rapide_5_240_33</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_1_450_24</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_2_450_24</inputSolutionFile> 
+				<inputSolutionFile>files/gendreau2006/requests/req_rapide_3_450_24</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_4_450_24</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_5_450_24</inputSolutionFile> -->
 		</problemBenchmarks>
 		<solver>
 			<!-- Common solver configuration -->
 			<environmentMode>REPRODUCIBLE</environmentMode>
 			<randomType>MERSENNE_TWISTER</randomType>
 			<solutionClass>com.github.rinde.logistics.pdptw.solver.optaplanner.PDPSolution</solutionClass>
-            <entityClass>com.github.rinde.logistics.pdptw.solver.optaplanner.ParcelVisit</entityClass>
-            <entityClass>com.github.rinde.logistics.pdptw.solver.optaplanner.Visit</entityClass>
-            
-            <scoreDirectorFactory>
-                <scoreDefinitionType>HARD_SOFT_LONG</scoreDefinitionType>
-                <incrementalScoreCalculatorClass>com.github.rinde.logistics.pdptw.solver.optaplanner.ScoreCalculator</incrementalScoreCalculatorClass>
-            </scoreDirectorFactory>
-            
-            <termination>
-                  <unimprovedSecondsSpentLimit>60</unimprovedSecondsSpentLimit>
-            </termination>
-            
+			<entityClass>com.github.rinde.logistics.pdptw.solver.optaplanner.ParcelVisit</entityClass>
+			<entityClass>com.github.rinde.logistics.pdptw.solver.optaplanner.Visit</entityClass>
+
+			<scoreDirectorFactory>
+				<scoreDefinitionType>HARD_SOFT_LONG</scoreDefinitionType>
+				<incrementalScoreCalculatorClass>com.github.rinde.logistics.pdptw.solver.optaplanner.ScoreCalculator</incrementalScoreCalculatorClass>
+			</scoreDirectorFactory>
+
+			<termination>
+				<unimprovedMillisecondsSpentLimit>1000</unimprovedMillisecondsSpentLimit>
+			</termination>
+
+			<constructionHeuristic>
+				<constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+			</constructionHeuristic>
 			<localSearch>
-			     <acceptor>
-                    <simulatedAnnealingStartingTemperature>2hard/999999999999soft</simulatedAnnealingStartingTemperature>
-                </acceptor>
+				<acceptor>
+					<simulatedAnnealingStartingTemperature>2hard/999999999999soft</simulatedAnnealingStartingTemperature>
+				</acceptor>
 				<unionMoveSelector>
 					<moveIteratorFactory>
 						<moveIteratorFactoryClass>com.github.rinde.logistics.pdptw.solver.optaplanner.MoveItFactory</moveIteratorFactoryClass>
@@ -60,80 +54,76 @@
 			</localSearch>
 		</solver>
 	</inheritedSolverBenchmark>
-	
-	<!--  <solverBenchmarkBluePrint>
-		<solverBenchmarkBluePrintType>EVERY_CONSTRUCTION_HEURISTIC_TYPE_WITH_EVERY_LOCAL_SEARCH_TYPE</solverBenchmarkBluePrintType>
-	</solverBenchmarkBluePrint>-->
-	
-	 <solverBenchmark>
-    <name>First Fit</name>
-    <solver>
-      <constructionHeuristic>
-        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
-      </constructionHeuristic>
-    </solver>
-  </solverBenchmark>
-  <solverBenchmark>
-    <name>First Fit Decreasing</name>
-    <solver>
-      <constructionHeuristic>
-        <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
-      </constructionHeuristic>
-    </solver>
-  </solverBenchmark>
 
-  <solverBenchmark>
-    <name>Tabu Search</name>
-    <solver>
-      <constructionHeuristic>
-        <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
-      </constructionHeuristic>
-      <localSearch>
-        <unionMoveSelector>
-          <changeMoveSelector/>
-          <swapMoveSelector/>
-          <subChainChangeMoveSelector>
-            <selectReversingMoveToo>true</selectReversingMoveToo>
-          </subChainChangeMoveSelector>
-          <subChainSwapMoveSelector>
-            <selectReversingMoveToo>true</selectReversingMoveToo>
-          </subChainSwapMoveSelector>
-        </unionMoveSelector>
-        <acceptor>
-          <entityTabuSize>9</entityTabuSize>
-        </acceptor>
-        <forager>
-          <acceptedCountLimit>2000</acceptedCountLimit>
-        </forager>
-      </localSearch>
-    </solver>
-  </solverBenchmark>
-  <solverBenchmark>
-    <name>Late Acceptance</name>
-    <solver>
-      <constructionHeuristic>
-        <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
-      </constructionHeuristic>
-      <localSearch>
-        <unionMoveSelector>
-          <changeMoveSelector/>
-          <swapMoveSelector/>
-          <subChainChangeMoveSelector>
-            <selectReversingMoveToo>true</selectReversingMoveToo>
-          </subChainChangeMoveSelector>
-          <subChainSwapMoveSelector>
-            <selectReversingMoveToo>true</selectReversingMoveToo>
-          </subChainSwapMoveSelector>
-        </unionMoveSelector>
-        <acceptor>
-          <lateAcceptanceSize>200</lateAcceptanceSize>
-        </acceptor>
-        <forager>
-          <acceptedCountLimit>1</acceptedCountLimit>
-        </forager>
-      </localSearch>
-    </solver>
-  </solverBenchmark>
+	<!-- <solverBenchmarkBluePrint> <solverBenchmarkBluePrintType>EVERY_LOCAL_SEARCH_TYPE</solverBenchmarkBluePrintType> </solverBenchmarkBluePrint> -->
+	<solverBenchmark>
+		<name>Hill Climbing</name>
+		<solver>
+			<constructionHeuristic>
+				<constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+			</constructionHeuristic>
+			<localSearch>
+				<acceptor>
+					<acceptorType>HILL_CLIMBING</acceptorType>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
 
-  
+	<solverBenchmark>
+		<name>Simulated Annealing</name>
+		<solver>
+			<constructionHeuristic>
+				<constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+			</constructionHeuristic>
+			<localSearch>
+				<acceptor>
+					<simulatedAnnealingStartingTemperature>2hard/999999999999soft</simulatedAnnealingStartingTemperature>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<solverBenchmark>
+		<name>Simulated Annealing and Tabu</name>
+		<solver>
+			<constructionHeuristic>
+				<constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+			</constructionHeuristic>
+			<localSearch>
+				<acceptor>
+					<simulatedAnnealingStartingTemperature>2hard/999999999999soft</simulatedAnnealingStartingTemperature>
+					<entityTabuSize>5</entityTabuSize>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<solverBenchmark>
+		<name>First Fit</name>
+		<solver>
+			<constructionHeuristic>
+				<constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+			</constructionHeuristic>
+		</solver>
+	</solverBenchmark>
+
+	<!-- <solverBenchmark> <name>First Fit Decreasing</name> <solver> <constructionHeuristic> <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType> </constructionHeuristic> 
+		</solver> </solverBenchmark> <solverBenchmark> <name>Tabu Search</name> <solver> <constructionHeuristic> <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType> 
+		</constructionHeuristic> <localSearch> <unionMoveSelector> <changeMoveSelector/> <swapMoveSelector/> <subChainChangeMoveSelector> <selectReversingMoveToo>true</selectReversingMoveToo> 
+		</subChainChangeMoveSelector> <subChainSwapMoveSelector> <selectReversingMoveToo>true</selectReversingMoveToo> </subChainSwapMoveSelector> </unionMoveSelector> <acceptor> <entityTabuSize>7</entityTabuSize> 
+		</acceptor> <forager> <acceptedCountLimit>2000</acceptedCountLimit> </forager> </localSearch> </solver> </solverBenchmark> <solverBenchmark> <name>Late Acceptance</name> <solver> <constructionHeuristic> 
+		<constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType> </constructionHeuristic> <localSearch> <unionMoveSelector> <changeMoveSelector/> <swapMoveSelector/> <subChainChangeMoveSelector> 
+		<selectReversingMoveToo>true</selectReversingMoveToo> </subChainChangeMoveSelector> <subChainSwapMoveSelector> <selectReversingMoveToo>true</selectReversingMoveToo> </subChainSwapMoveSelector> 
+		</unionMoveSelector> <acceptor> <lateAcceptanceSize>400</lateAcceptanceSize> </acceptor> <forager> <acceptedCountLimit>1</acceptedCountLimit> </forager> </localSearch> </solver> </solverBenchmark> -->
+
 </plannerBenchmark>
