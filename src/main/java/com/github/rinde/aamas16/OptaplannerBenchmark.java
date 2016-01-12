@@ -30,7 +30,7 @@ public class OptaplannerBenchmark {
   public static void main(String[] args) {
 
     final PlannerBenchmarkFactory plannerBenchmarkFactory =
-      PlannerBenchmarkFactory.createFromXmlResource(
+      PlannerBenchmarkFactory.createFromFreemarkerXmlResource(
         "com/github/rinde/jaamas16/benchmarkConfig.xml");
 
     final PlannerBenchmark plannerBenchmark =
