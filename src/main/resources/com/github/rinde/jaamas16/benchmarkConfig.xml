@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plannerBenchmark>
 	<benchmarkDirectory>files/results/OPTAPLANNER_BENCHMARK</benchmarkDirectory>
-	<warmUpSecondsSpentLimit>1</warmUpSecondsSpentLimit>
+	<warmUpSecondsSpentLimit>30</warmUpSecondsSpentLimit>
 	<parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
 
 	<inheritedSolverBenchmark>
