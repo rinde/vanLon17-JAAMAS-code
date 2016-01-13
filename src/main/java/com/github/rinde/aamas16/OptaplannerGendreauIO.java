@@ -22,7 +22,7 @@ import java.io.File;
 import org.optaplanner.core.api.domain.solution.Solution;
 import org.optaplanner.persistence.common.api.domain.solution.SolutionFileIO;
 
-import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolver;
+import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolvers;
 import com.github.rinde.logistics.pdptw.solver.optaplanner.PDPSolution;
 import com.github.rinde.rinsim.central.GlobalStateObject;
 import com.github.rinde.rinsim.central.Solvers;
@@ -86,7 +86,7 @@ public class OptaplannerGendreauIO implements SolutionFileIO {
 
     checkState(!gso.getVehicles().isEmpty());
 
-    return OptaplannerSolver.convert(gso);
+    return OptaplannerSolvers.convert(gso);
   }
 
   @Override

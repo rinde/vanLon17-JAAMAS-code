@@ -39,7 +39,7 @@ import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
 import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
-import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolver;
+import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolvers;
 import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
@@ -105,7 +105,7 @@ public class PerformExperiment {
         bldr.addScenarios(
           FileProvider.builder().add(Paths.get("files/gendreau2006/requests"))
               .filter("glob:**req_rapide_**"))
-            .setScenarioReader(Functions.compose(ScenarioConverter.INSTANCE,
+            .setScenarioReader(Functions.compose(ScenarioConverter.TO_ONLINE_250,
               Gendreau06Parser.reader()))
             .addResultListener(new GendreauResultWriter(experimentDir));;
       }
@@ -132,7 +132,7 @@ public class PerformExperiment {
         bldr.addScenarios(FileProvider.builder()
             .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
             .setScenarioReader(
-              ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
+              ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_250))
             .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
       }
     },
@@ -148,7 +148,7 @@ public class PerformExperiment {
           FileProvider.builder().add(Paths.get(VANLON_HOLVOET_DATASET))
               .filter("glob:**0.50-20-10.00-[0-9].scen"))
             .setScenarioReader(
-              ScenarioIO.readerAdapter(ScenarioConverter.INSTANCE))
+              ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_250))
             .repeat(10)
             .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
       }
@@ -317,10 +317,10 @@ public class PerformExperiment {
 
         .addConfiguration(
           Central.solverConfiguration(
-            OptaplannerSolver.builder()
-                .setUnimprovedMsLimit(1000L)
-                .setObjectiveFunction(Gendreau06ObjectiveFunction.instance(30d))
-                .setValidated(true)
+            OptaplannerSolvers.builder()
+                .withUnimprovedMsLimit(1000L)
+                .withObjectiveFunction(Gendreau06ObjectiveFunction.instance(30d))
+                .withValidated(true)
                 .buildSolver()))
         .showGui(View.builder()
             .withAutoPlay()
@@ -355,7 +355,7 @@ public class PerformExperiment {
      * Changes ticksize to 250ms and adds stopcondition with maximum sim time of
      * 10 hours.
      */
-    INSTANCE {
+    TO_ONLINE_250 {
       @Override
       public Scenario apply(@Nullable Scenario input) {
         final Scenario s = verifyNotNull(input);
