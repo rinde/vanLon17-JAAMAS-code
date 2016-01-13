@@ -317,8 +317,11 @@ public class PerformExperiment {
 
         .addConfiguration(
           Central.solverConfiguration(
-            OptaplannerSolver.validatedSupplier(1L, 30d)))
-
+            OptaplannerSolver.builder()
+                .setUnimprovedMsLimit(1000L)
+                .setObjectiveFunction(Gendreau06ObjectiveFunction.instance(30d))
+                .setValidated(true)
+                .buildSolver()))
         .showGui(View.builder()
             .withAutoPlay()
             .withAutoClose()
