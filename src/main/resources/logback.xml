@@ -25,6 +25,7 @@
 	<logger name="com.github.rinde.rinsim.core.model.time" level="WARN" />
 	<logger name="com.github.rinde.rinsim.scenario" level="WARN" />
 	<logger name="com.github.rinde.logistics" level="WARN" />
+	<logger name="org.optaplanner" level="WARN" />
 
 	<root level="INFO">
 		<appender-ref ref="STDOUT" />
