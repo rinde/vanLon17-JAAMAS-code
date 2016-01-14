@@ -22,19 +22,19 @@ import org.optaplanner.benchmark.api.PlannerBenchmarkFactory;
  *
  * @author Rinde van Lon
  */
-public class OptaplannerBenchmark {
+public class OfflineOptaplannerBenchmark {
 
   /**
    * @param args
    */
   public static void main(String[] args) {
-
     final PlannerBenchmarkFactory plannerBenchmarkFactory =
       PlannerBenchmarkFactory.createFromFreemarkerXmlResource(
         "com/github/rinde/jaamas16/benchmarkConfig.xml");
 
     final PlannerBenchmark plannerBenchmark =
       plannerBenchmarkFactory.buildPlannerBenchmark();
+
     plannerBenchmark.benchmark();
 
   }

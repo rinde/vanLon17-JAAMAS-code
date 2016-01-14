@@ -32,16 +32,16 @@
 			</scoreDirectorFactory>
 
 			<termination>
-				<unimprovedMillisecondsSpentLimit>60000</unimprovedMillisecondsSpentLimit>
+				<unimprovedMillisecondsSpentLimit>1</unimprovedMillisecondsSpentLimit>
 			</termination>
 
 			<constructionHeuristic>
 				<constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
 			</constructionHeuristic>
 			<localSearch>
-				<acceptor>
+				<!-- <acceptor>
 					<simulatedAnnealingStartingTemperature>2hard/999999999999soft</simulatedAnnealingStartingTemperature>
-				</acceptor>
+				</acceptor> --> 
 				<unionMoveSelector>
 					<moveIteratorFactory>
 						<moveIteratorFactoryClass>com.github.rinde.logistics.pdptw.solver.optaplanner.MoveItFactory</moveIteratorFactoryClass>

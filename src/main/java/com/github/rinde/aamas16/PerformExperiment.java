@@ -25,10 +25,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nullable;
+
+import org.optaplanner.core.config.solver.SolverConfig;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
@@ -95,18 +98,19 @@ import net.openhft.affinity.AffinityLock;
  */
 public class PerformExperiment {
   static final String VANLON_HOLVOET_DATASET = "files/vanLonHolvoet15/";
+  static final String GENDREAU_DATASET = "files/gendreau2006/requests";
   static final String RESULTS_MAIN_DIR = "files/results/";
 
   enum ExperimentType {
-
     GENDREAU(Gendreau06ObjectiveFunction.instance()) {
       @Override
       void apply(Builder bldr) {
         bldr.addScenarios(
-          FileProvider.builder().add(Paths.get("files/gendreau2006/requests"))
+          FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
               .filter("glob:**req_rapide_**"))
-            .setScenarioReader(Functions.compose(ScenarioConverter.TO_ONLINE_250,
-              Gendreau06Parser.reader()))
+            .setScenarioReader(
+              Functions.compose(ScenarioConverter.TO_ONLINE_250,
+                Gendreau06Parser.reader()))
             .addResultListener(new GendreauResultWriter(experimentDir));;
       }
     },
@@ -115,7 +119,7 @@ public class PerformExperiment {
       @Override
       void apply(Builder bldr) {
         bldr.addScenarios(
-          FileProvider.builder().add(Paths.get("files/gendreau2006/requests"))
+          FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
               .filter("glob:**req_rapide_**"))
             .setScenarioReader(Functions.compose(ScenarioConverter.TO_OFFLINE,
               Gendreau06Parser.reader()))
@@ -313,30 +317,49 @@ public class PerformExperiment {
             Opt2.builder()
                 .withObjectiveFunction(objFunc)
                 .buildSolverSupplier()))
-            .build())
+            .build());
 
-        .addConfiguration(
-          Central.solverConfiguration(
+    // .addConfiguration(
+    // Central.solverConfiguration(
+    // OptaplannerSolvers.builder()
+    // .withUnimprovedMsLimit(1000L)
+    // .withObjectiveFunction(
+    // Gendreau06ObjectiveFunction.instance(30d))
+    // .withValidated(true)
+    // .buildSolver()));
+
+    final Map<String, SolverConfig> configs =
+      OptaplannerSolvers.getConfigsFromBenchmark(
+        "com/github/rinde/jaamas16/benchmarkConfig.xml");
+
+    for (final Entry<String, SolverConfig> config : configs.entrySet()) {
+      experimentBuilder.addConfiguration(
+        MASConfiguration.builder(
+          RtCentral.solverConfiguration(
             OptaplannerSolvers.builder()
-                .withUnimprovedMsLimit(1000L)
-                .withObjectiveFunction(Gendreau06ObjectiveFunction.instance(30d))
-                .withValidated(true)
-                .buildSolver()))
-        .showGui(View.builder()
-            .withAutoPlay()
-            .withAutoClose()
-            .withSpeedUp(8)
-            // .withFullScreen()
-            .withTitleAppendix("AAMAS 2016 Experiment")
-            .with(RoadUserRenderer.builder()
-                .withToStringLabel())
-            .with(RouteRenderer.builder())
-            .with(PDPModelRenderer.builder())
-            .with(PlaneRoadModelRenderer.builder())
-            .with(AuctionPanel.builder())
-            .with(TimeLinePanel.builder())
-            .with(RtSolverPanel.builder())
-            .withResolution(1280, 1024));
+                .withUnimprovedMsLimit(180000L)
+                .withSolverConfig(config.getValue())
+                .buildRealtimeSolver(),
+            config.getKey()))
+            .addModel(RealtimeClockLogger.builder())
+            .build());
+    }
+
+    experimentBuilder.showGui(View.builder()
+        .withAutoPlay()
+        .withAutoClose()
+        .withSpeedUp(8)
+        // .withFullScreen()
+        .withTitleAppendix("AAMAS 2016 Experiment")
+        .with(RoadUserRenderer.builder()
+            .withToStringLabel())
+        .with(RouteRenderer.builder())
+        .with(PDPModelRenderer.builder())
+        .with(PlaneRoadModelRenderer.builder())
+        .with(AuctionPanel.builder())
+        .with(TimeLinePanel.builder())
+        .with(RtSolverPanel.builder())
+        .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
       experimentBuilder.perform(System.out, expArgs);
