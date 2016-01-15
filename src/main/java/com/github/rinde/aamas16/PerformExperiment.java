@@ -35,7 +35,6 @@ import org.optaplanner.core.config.solver.SolverConfig;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
-import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
@@ -337,8 +336,9 @@ public class PerformExperiment {
         MASConfiguration.builder(
           RtCentral.solverConfiguration(
             OptaplannerSolvers.builder()
-                .withUnimprovedMsLimit(180000L)
+                .withUnimprovedMsLimit(10000L)
                 .withSolverConfig(config.getValue())
+                .withName(config.getKey())
                 .buildRealtimeSolver(),
             config.getKey()))
             .addModel(RealtimeClockLogger.builder())
@@ -356,7 +356,7 @@ public class PerformExperiment {
         .with(RouteRenderer.builder())
         .with(PDPModelRenderer.builder())
         .with(PlaneRoadModelRenderer.builder())
-        .with(AuctionPanel.builder())
+        // .with(AuctionPanel.builder())
         .with(TimeLinePanel.builder())
         .with(RtSolverPanel.builder())
         .withResolution(1280, 1024));
