@@ -221,76 +221,81 @@
         </solver>
     </solverBenchmark>
 
-	<!-- <solverBenchmarkBluePrint> <solverBenchmarkBluePrintType>EVERY_LOCAL_SEARCH_TYPE</solverBenchmarkBluePrintType> </solverBenchmarkBluePrint> -->
-	<!-- 
-	<solverBenchmark>
-		<name>Hill Climbing</name>
-		<solver>
-			<constructionHeuristic>
-				<constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
-			</constructionHeuristic>
-			<localSearch>
-				<acceptor>
-					<acceptorType>HILL_CLIMBING</acceptorType>
-				</acceptor>
-				<forager>
-					<acceptedCountLimit>1</acceptedCountLimit>
-				</forager>
-			</localSearch>
-		</solver>
-	</solverBenchmark>
-
-	<solverBenchmark>
-		<name>Simulated Annealing</name>
-		<solver>
-			<constructionHeuristic>
-				<constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
-			</constructionHeuristic>
-			<localSearch>
-				<acceptor>
-					<simulatedAnnealingStartingTemperature>2hard/999999999999soft</simulatedAnnealingStartingTemperature>
-				</acceptor>
-				<forager>
-					<acceptedCountLimit>1</acceptedCountLimit>
-				</forager>
-			</localSearch>
-		</solver>
-	</solverBenchmark>
-
-	<solverBenchmark>
-		<name>Simulated Annealing and Tabu</name>
-		<solver>
-			<constructionHeuristic>
-				<constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
-			</constructionHeuristic>
-			<localSearch>
-				<acceptor>
-					<simulatedAnnealingStartingTemperature>2hard/999999999999soft</simulatedAnnealingStartingTemperature>
-					<entityTabuSize>5</entityTabuSize>
-				</acceptor>
-				<forager>
-					<acceptedCountLimit>1</acceptedCountLimit>
-				</forager>
-			</localSearch>
-		</solver>
-	</solverBenchmark>
-
-	<solverBenchmark>
-		<name>First Fit</name>
-		<solver>
-			<constructionHeuristic>
-				<constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
-			</constructionHeuristic>
-		</solver>
-	</solverBenchmark> -->
-
-	<!-- <solverBenchmark> <name>First Fit Decreasing</name> <solver> <constructionHeuristic> <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType> </constructionHeuristic> 
-		</solver> </solverBenchmark> <solverBenchmark> <name>Tabu Search</name> <solver> <constructionHeuristic> <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType> 
-		</constructionHeuristic> <localSearch> <unionMoveSelector> <changeMoveSelector/> <swapMoveSelector/> <subChainChangeMoveSelector> <selectReversingMoveToo>true</selectReversingMoveToo> 
-		</subChainChangeMoveSelector> <subChainSwapMoveSelector> <selectReversingMoveToo>true</selectReversingMoveToo> </subChainSwapMoveSelector> </unionMoveSelector> <acceptor> <entityTabuSize>7</entityTabuSize> 
-		</acceptor> <forager> <acceptedCountLimit>2000</acceptedCountLimit> </forager> </localSearch> </solver> </solverBenchmark> <solverBenchmark> <name>Late Acceptance</name> <solver> <constructionHeuristic> 
-		<constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType> </constructionHeuristic> <localSearch> <unionMoveSelector> <changeMoveSelector/> <swapMoveSelector/> <subChainChangeMoveSelector> 
-		<selectReversingMoveToo>true</selectReversingMoveToo> </subChainChangeMoveSelector> <subChainSwapMoveSelector> <selectReversingMoveToo>true</selectReversingMoveToo> </subChainSwapMoveSelector> 
-		</unionMoveSelector> <acceptor> <lateAcceptanceSize>400</lateAcceptanceSize> </acceptor> <forager> <acceptedCountLimit>1</acceptedCountLimit> </forager> </localSearch> </solver> </solverBenchmark> -->
+    <!-- SECOND BENCHMARK PHASE PLANNERS -->
+    
+    <#list [1, 2] as acceptedCountLimit>
+    <#list [0.01, 0.015, 0.02] as tabuRatio>
+    <solverBenchmark>
+        <name>Step counting HC with tabu - acceptCountLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
+        <solver>
+            <localSearch>
+                <acceptor>
+                    <stepCountingHillClimbingSize>400</stepCountingHillClimbingSize>
+                    <entityTabuRatio>${tabuRatio}</entityTabuRatio>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>${acceptedCountLimit}</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+    </#list>
+    </#list>
+    
+    <#list [1500, 2500] as acceptedCountLimit>
+    <#list [0.01, 0.015, 0.02] as tabuRatio>
+    <solverBenchmark>
+    <name>Tabu search acceptCoutLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
+    <solver>
+        <localSearch>
+            <acceptor>
+                <entityTabuRatio>${tabuRatio}</entityTabuRatio>
+            </acceptor>
+            <forager>
+                <acceptedCountLimit>${acceptedCountLimit}</acceptedCountLimit>
+            </forager>
+          </localSearch>
+       </solver>
+    </solverBenchmark>
+    </#list>
+    </#list>
+    
+    <#list [2000] as acceptedCountLimit>
+    <#list [0.015] as tabuRatio>
+    <solverBenchmark>
+    <name>Tabu search acceptCoutLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
+    <solver>
+        <localSearch>
+            <acceptor>
+                <entityTabuRatio>${tabuRatio}</entityTabuRatio>
+            </acceptor>
+            <forager>
+                <acceptedCountLimit>${acceptedCountLimit}</acceptedCountLimit>
+            </forager>
+          </localSearch>
+       </solver>
+    </solverBenchmark>
+    </#list>
+    </#list>
+    
+    <#list [1, 2] as acceptedCountLimit>
+    <#list [0.01, 0.015, 0.02] as tabuRatio>
+    <solverBenchmark>
+        <name>Step counting HC with tabu and strategic oscillation - acceptCoutLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
+        <solver>
+            <localSearch>
+                <acceptor>
+                    <stepCountingHillClimbingSize>400</stepCountingHillClimbingSize>
+                    <entityTabuRatio>${tabuRatio}</entityTabuRatio>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>${acceptedCountLimit}</acceptedCountLimit>
+                    <finalistPodiumType>STRATEGIC_OSCILLATION</finalistPodiumType>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+    </#list>
+    </#list>
 
 </plannerBenchmark>
