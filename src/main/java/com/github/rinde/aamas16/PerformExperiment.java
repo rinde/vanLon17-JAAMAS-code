@@ -64,6 +64,7 @@ import com.github.rinde.rinsim.experiment.MASConfiguration;
 import com.github.rinde.rinsim.experiment.PostProcessor;
 import com.github.rinde.rinsim.experiment.PostProcessors;
 import com.github.rinde.rinsim.io.FileProvider;
+import com.github.rinde.rinsim.pdptw.common.AddDepotEvent;
 import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
@@ -74,6 +75,7 @@ import com.github.rinde.rinsim.scenario.Scenario;
 import com.github.rinde.rinsim.scenario.ScenarioConverters;
 import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.scenario.StopConditions;
+import com.github.rinde.rinsim.scenario.TimeOutEvent;
 import com.github.rinde.rinsim.scenario.TimedEvent;
 import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
@@ -333,15 +335,23 @@ public class PerformExperiment {
 
     for (final Entry<String, SolverConfig> config : configs.entrySet()) {
       experimentBuilder.addConfiguration(
-        MASConfiguration.builder(
-          RtCentral.solverConfiguration(
-            OptaplannerSolvers.builder()
-                .withUnimprovedMsLimit(10000L)
-                .withSolverConfig(config.getValue())
-                .withName(config.getKey())
-                .buildRealtimeSolver(),
-            config.getKey()))
+        MASConfiguration.builder()
+            .addModel(
+              RtCentral.builder(
+                OptaplannerSolvers.builder()
+                    .withUnimprovedMsLimit(10000L)
+                    .withSolverConfig(config.getValue())
+                    .withName(config.getKey())
+                    .buildRealtimeSolver())
+                  .withContinuousUpdates(true))
             .addModel(RealtimeClockLogger.builder())
+            .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
+            .addEventHandler(AddParcelEvent.class,
+              AddParcelEvent.defaultHandler())
+            .addEventHandler(AddDepotEvent.class,
+              AddDepotEvent.defaultHandler())
+            .addEventHandler(TimeOutEvent.class, TimeOutEvent.ignoreHandler())
+            .setName(config.getKey())
             .build());
     }
 
