@@ -26,7 +26,7 @@ import org.joda.time.format.ISODateTimeFormat;
 
 import com.github.rinde.aamas16.PerformExperiment.AuctionStats;
 import com.github.rinde.aamas16.PerformExperiment.ExperimentInfo;
-import com.github.rinde.rinsim.core.model.time.MeasuredDeviation;
+import com.github.rinde.rinsim.core.model.time.RealtimeTickInfo;
 import com.github.rinde.rinsim.experiment.Experiment.SimArgs;
 import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
 import com.github.rinde.rinsim.experiment.ExperimentResults;
@@ -134,19 +134,13 @@ abstract class ResultWriter implements ResultListener {
   }
 
   static void appendTimeLogSummary(SimulationResult sr, File target) {
-
     if (sr.getResultObject() instanceof PerformExperiment.ExperimentInfo) {
-
       final PerformExperiment.ExperimentInfo info =
         (PerformExperiment.ExperimentInfo) sr.getResultObject();
 
-      final int totalMeasuredDeviations = info.getMeasuredDeviations().size();
-      long sumDeviationNs = 0;
-      long sumCorrectionNs = 0;
+      final int tickInfoListSize = info.getTickInfoList().size();
       long sumIatNs = 0;
-      for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
-        sumDeviationNs += md.getDeviationNs();
-        sumCorrectionNs += md.getCorrectionNs();
+      for (final RealtimeTickInfo md : info.getTickInfoList()) {
         sumIatNs += md.getInterArrivalTime();
       }
 
@@ -156,21 +150,30 @@ abstract class ResultWriter implements ResultListener {
           sr.getSimArgs().getScenario().getProblemInstanceId(),
           sr.getSimArgs().getMasConfig().getName(),
           sr.getSimArgs().getRandomSeed(),
-          totalMeasuredDeviations,
-          sumDeviationNs,
-          totalMeasuredDeviations == 0 ? 0
-              : sumDeviationNs / totalMeasuredDeviations,
-          sumCorrectionNs,
-          totalMeasuredDeviations == 0 ? 0
-              : sumCorrectionNs / totalMeasuredDeviations,
-          totalMeasuredDeviations == 0 ? 0
-              : sumIatNs / totalMeasuredDeviations,
+          tickInfoListSize,
+          tickInfoListSize == 0 ? 0
+              : sumIatNs / tickInfoListSize,
           info.getRtCount(),
           info.getStCount() + "\n"), target, Charsets.UTF_8);
       } catch (final IOException e) {
         throw new IllegalStateException(e);
       }
+    }
+  }
 
+  static void createTimeLogSummaryHeader(File target) {
+    try {
+      Files.append(Joiner.on(',').join(
+        "problem-class",
+        "instance",
+        "config",
+        "random-seed",
+        "rt-tick-infos",
+        "avg-interarrival-time",
+        "rt-count",
+        "st-count\n"), target, Charsets.UTF_8);
+    } catch (final IOException e) {
+      throw new IllegalStateException(e);
     }
   }
 
@@ -243,46 +246,14 @@ abstract class ResultWriter implements ResultListener {
       scenario.getProblemInstanceId(),
       simArgs.getRandomSeed());
 
-    final File deviationsFile = new File(experimentDir, id + "-deviations.csv");
     final File iatFile = new File(experimentDir, id + "-interarrivaltimes.csv");
-
     final ExperimentInfo info = (ExperimentInfo) sr.getResultObject();
-
-    try (FileWriter writer = new FileWriter(deviationsFile)) {
-      deviationsFile.createNewFile();
-      for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
-        writer.write(Long.toString(md.getDeviationNs()));
-        writer.write(System.lineSeparator());
-      }
-    } catch (final IOException e) {
-      throw new IllegalStateException(e);
-    }
     try (FileWriter writer = new FileWriter(iatFile)) {
       iatFile.createNewFile();
-      for (final MeasuredDeviation md : info.getMeasuredDeviations()) {
+      for (final RealtimeTickInfo md : info.getTickInfoList()) {
         writer.write(Long.toString(md.getInterArrivalTime()));
         writer.write(System.lineSeparator());
       }
-    } catch (final IOException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  static void createTimeLogSummaryHeader(File target) {
-    try {
-      Files.append(Joiner.on(',').join(
-        "problem-class",
-        "instance",
-        "config",
-        "random-seed",
-        "measured-deviations",
-        "sum-deviations",
-        "avg-deviation",
-        "sum-correction",
-        "avg-correction",
-        "avg-interarrival-time",
-        "rt-count",
-        "st-count\n"), target, Charsets.UTF_8);
     } catch (final IOException e) {
       throw new IllegalStateException(e);
     }

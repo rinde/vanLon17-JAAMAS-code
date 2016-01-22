@@ -51,9 +51,9 @@ import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.SimulatorAPI;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.time.MeasuredDeviation;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
+import com.github.rinde.rinsim.core.model.time.RealtimeTickInfo;
 import com.github.rinde.rinsim.core.model.time.TimeModel;
 import com.github.rinde.rinsim.experiment.CommandLineProgress;
 import com.github.rinde.rinsim.experiment.Experiment;
@@ -445,12 +445,12 @@ public class PerformExperiment {
 
     abstract StatisticsDTO getStats();
 
-    abstract ImmutableList<MeasuredDeviation> getMeasuredDeviations();
+    abstract ImmutableList<RealtimeTickInfo> getTickInfoList();
 
     abstract Optional<AuctionStats> getAuctionStats();
 
     static ExperimentInfo create(List<LogEntry> log, long rt, long st,
-        StatisticsDTO stats, ImmutableList<MeasuredDeviation> dev,
+        StatisticsDTO stats, ImmutableList<RealtimeTickInfo> dev,
         Optional<AuctionStats> aStats) {
       return new AutoValue_PerformExperiment_ExperimentInfo(log, rt, st, stats,
           dev, aStats);
@@ -492,11 +492,11 @@ public class PerformExperiment {
             0,
             sim.getCurrentTime() / sim.getTimeStep(),
             stats,
-            ImmutableList.<MeasuredDeviation>of(),
+            ImmutableList.<RealtimeTickInfo>of(),
             aStats);
         }
         return ExperimentInfo.create(logger.getLog(), logger.getRtCount(),
-          logger.getStCount(), stats, logger.getDeviations(), aStats);
+          logger.getStCount(), stats, logger.getTickInfoList(), aStats);
       }
 
       @Override
