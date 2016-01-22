@@ -337,7 +337,7 @@ public class PerformExperiment {
             .addModel(
               RtCentral.builder(
                 OptaplannerSolvers.builder()
-                    .withUnimprovedMsLimit(10L)
+                    .withUnimprovedMsLimit(10000L)
                     .withSolverConfig(config.getValue())
                     .withName(config.getKey())
                     .buildRealtimeSolverSupplier())
