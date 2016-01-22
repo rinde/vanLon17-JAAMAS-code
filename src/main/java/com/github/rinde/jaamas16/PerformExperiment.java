@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.aamas16;
+package com.github.rinde.jaamas16;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verifyNotNull;
@@ -337,7 +337,7 @@ public class PerformExperiment {
             .addModel(
               RtCentral.builder(
                 OptaplannerSolvers.builder()
-                    .withUnimprovedMsLimit(10000L)
+                    .withUnimprovedMsLimit(10L)
                     .withSolverConfig(config.getValue())
                     .withName(config.getKey())
                     .buildRealtimeSolverSupplier())

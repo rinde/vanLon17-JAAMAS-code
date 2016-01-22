@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.aamas16;
+package com.github.rinde.jaamas16;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -24,8 +24,8 @@ import java.util.Collection;
 
 import org.joda.time.format.ISODateTimeFormat;
 
-import com.github.rinde.aamas16.PerformExperiment.AuctionStats;
-import com.github.rinde.aamas16.PerformExperiment.ExperimentInfo;
+import com.github.rinde.jaamas16.PerformExperiment.AuctionStats;
+import com.github.rinde.jaamas16.PerformExperiment.ExperimentInfo;
 import com.github.rinde.rinsim.core.model.time.RealtimeTickInfo;
 import com.github.rinde.rinsim.experiment.Experiment.SimArgs;
 import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.aamas16;
+package com.github.rinde.jaamas16;
 
 import org.optaplanner.benchmark.api.PlannerBenchmark;
 import org.optaplanner.benchmark.api.PlannerBenchmarkFactory;
