@@ -1,1 +1,1 @@
-# vanLon16-AAMAS-code
+# vanLon16-JAAMAS-code
