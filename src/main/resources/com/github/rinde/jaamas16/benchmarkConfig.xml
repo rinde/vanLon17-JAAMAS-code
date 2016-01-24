@@ -223,27 +223,8 @@
 
     <!-- SECOND BENCHMARK PHASE PLANNERS -->
     
-    <#list [1, 2] as acceptedCountLimit>
-    <#list [0.01, 0.015, 0.02] as tabuRatio>
-    <solverBenchmark>
-        <name>Step counting HC with tabu - acceptCountLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
-        <solver>
-            <localSearch>
-                <acceptor>
-                    <stepCountingHillClimbingSize>400</stepCountingHillClimbingSize>
-                    <entityTabuRatio>${tabuRatio}</entityTabuRatio>
-                </acceptor>
-                <forager>
-                    <acceptedCountLimit>${acceptedCountLimit}</acceptedCountLimit>
-                </forager>
-            </localSearch>
-        </solver>
-    </solverBenchmark>
-    </#list>
-    </#list>
-    
-    <#list [1500, 2500] as acceptedCountLimit>
-    <#list [0.01, 0.015, 0.02] as tabuRatio>
+    <#list [400, 600, 1500, 2500] as acceptedCountLimit>
+    <#list [0.015, 0.02, 0.025] as tabuRatio>
     <solverBenchmark>
     <name>Tabu search acceptCoutLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
     <solver>
@@ -260,8 +241,8 @@
     </#list>
     </#list>
     
-    <#list [2000] as acceptedCountLimit>
-    <#list [0.015] as tabuRatio>
+    <#list [500, 1000, 2000] as acceptedCountLimit>
+    <#list [0.015, 0.025] as tabuRatio>
     <solverBenchmark>
     <name>Tabu search acceptCoutLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
     <solver>
@@ -278,24 +259,37 @@
     </#list>
     </#list>
     
-    <#list [1, 2] as acceptedCountLimit>
-    <#list [0.01, 0.015, 0.02] as tabuRatio>
+    <#list [250, 750, 1500, 2500] as acceptedCountLimit>
     <solverBenchmark>
-        <name>Step counting HC with tabu and strategic oscillation - acceptCoutLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
+        <name>Hill climbing ${acceptedCountLimit}</name>
         <solver>
             <localSearch>
                 <acceptor>
-                    <stepCountingHillClimbingSize>400</stepCountingHillClimbingSize>
-                    <entityTabuRatio>${tabuRatio}</entityTabuRatio>
+                    <acceptorType>HILL_CLIMBING</acceptorType>
                 </acceptor>
                 <forager>
                     <acceptedCountLimit>${acceptedCountLimit}</acceptedCountLimit>
-                    <finalistPodiumType>STRATEGIC_OSCILLATION</finalistPodiumType>
                 </forager>
             </localSearch>
         </solver>
     </solverBenchmark>
     </#list>
+    
+    <#list [200, 300, 500,600, 800, 1200] as acceptedCountLimit>
+    <solverBenchmark>
+        <name>Late acceptance ${acceptedCountLimit}</name>
+        <solver>
+            <localSearch>
+                <acceptor>
+                    <lateAcceptanceSize>400</lateAcceptanceSize>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>1</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
     </#list>
+   
 
 </plannerBenchmark>
