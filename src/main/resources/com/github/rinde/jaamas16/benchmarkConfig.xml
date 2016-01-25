@@ -59,11 +59,11 @@
 		</solver>
 	</inheritedSolverBenchmark>
 
-<solverBenchmark>
+    <solverBenchmark>
         <name>First fit decreasing</name>
-</solverBenchmark>
+    </solverBenchmark>
 
-<#list [500, 1000, 2000] as acceptedCountLimit>
+    <#list [500, 1000, 2000] as acceptedCountLimit>
 	<solverBenchmark>
 		<name>Hill climbing ${acceptedCountLimit}</name>
 		<solver>
@@ -77,12 +77,12 @@
 			</localSearch>
 		</solver>
 	</solverBenchmark>
-</#list>
+    </#list>
 
-<#list [500, 1000, 2000] as acceptedCountLimit>
-<#list [0.01, 0.02, 0.03] as tabuRatio>
+    <#list [500, 1000, 2000] as acceptedCountLimit>
+    <#list [0.01, 0.02, 0.03] as tabuRatio>
 	<solverBenchmark>
-	<name>Tabu search acceptCoutLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
+	<name>Tabu search acceptCountLim ${acceptedCountLimit} tabuRatio ${tabuRatio}</name>
 	<solver>
 		<localSearch>
 			<acceptor>
@@ -94,10 +94,10 @@
 		  </localSearch>
 	   </solver>
     </solverBenchmark>
-</#list>
-</#list>
+    </#list>
+    </#list>
 
-<#list [1,2,3,4] as acceptedCountLimit>
+    <#list [1,2,3,4] as acceptedCountLimit>
 	<solverBenchmark>
 		<name>Simulated annealing ${acceptedCountLimit}</name>
 		<solver>
@@ -111,9 +111,9 @@
 			</localSearch>
 		</solver>
 	</solverBenchmark>
-</#list>
+    </#list>
 
-<#list [1,2,3,4] as acceptedCountLimit>
+    <#list [1,2,3,4] as acceptedCountLimit>
     <solverBenchmark>
         <name>Simulated annealing ${acceptedCountLimit} with tabu 5</name>
         <solver>
@@ -128,45 +128,49 @@
             </localSearch>
         </solver>
     </solverBenchmark>
-</#list>
+    </#list>
 
-
-	<solverBenchmark>
-		<name>Late acceptance</name>
-		<solver>
-			<localSearch>
-				<acceptor>
-					<lateAcceptanceSize>400</lateAcceptanceSize>
-				</acceptor>
-				<forager>
-					<acceptedCountLimit>1</acceptedCountLimit>
-				</forager>
-			</localSearch>
-		</solver>
-	</solverBenchmark>
-
-	<solverBenchmark>
-		<name>Late acceptance with tabu</name>
-		<solver>
-			<localSearch>
-				<acceptor>
-					<lateAcceptanceSize>400</lateAcceptanceSize>
-					<entityTabuSize>5</entityTabuSize>
-				</acceptor>
-				<forager>
-					<acceptedCountLimit>1</acceptedCountLimit>
-				</forager>
-			</localSearch>
-		</solver>
-	</solverBenchmark>
-	
-	<solverBenchmark>
-        <name>Late acceptance with tabu and strategic oscillation</name>
+	<#list [200, 400, 600] as acceptedCountLimit>
+    <solverBenchmark>
+        <name>Late acceptance ${acceptedCountLimit}</name>
         <solver>
             <localSearch>
                 <acceptor>
                     <lateAcceptanceSize>400</lateAcceptanceSize>
-                    <entityTabuSize>5</entityTabuSize>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>1</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+    </#list>
+
+    <#list [0.01, 0.02, 0.03] as tabuRatio>
+	<solverBenchmark>
+		<name>Late acceptance with tabu ${tabuRatio}</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<lateAcceptanceSize>400</lateAcceptanceSize>
+					<entityTabuRatio>${tabuRatio}</entityTabuRatio>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+	</#list>
+	
+	<#list [0.01, 0.02, 0.03] as tabuRatio>
+	<solverBenchmark>
+        <name>Late acceptance with tabu ${tabuRatio} and strategic oscillation</name>
+        <solver>
+            <localSearch>
+                <acceptor>
+                    <lateAcceptanceSize>400</lateAcceptanceSize>
+                    <entityTabuRatio>${tabuRatio}</entityTabuRatio>
                 </acceptor>
                 <forager>
                     <acceptedCountLimit>1</acceptedCountLimit>
@@ -175,13 +179,15 @@
             </localSearch>
         </solver>
     </solverBenchmark>
+    </#list>
 
+    <#list [200, 400, 600] as stepCountingHillClimbingSize>
 	<solverBenchmark>
-		<name>Step counting hill climbing</name>
+		<name>Step counting hill climbing ${stepCountingHillClimbingSize}</name>
 		<solver>
 			<localSearch>
 				<acceptor>
-					<stepCountingHillClimbingSize>400</stepCountingHillClimbingSize>
+					<stepCountingHillClimbingSize>${stepCountingHillClimbingSize}</stepCountingHillClimbingSize>
 				</acceptor>
 				<forager>
 					<acceptedCountLimit>1</acceptedCountLimit>
@@ -189,6 +195,7 @@
 			</localSearch>
 		</solver>
 	</solverBenchmark>
+	</#list>
 	
 	<solverBenchmark>
         <name>Step counting hill climbing with tabu</name>
@@ -196,7 +203,7 @@
             <localSearch>
                 <acceptor>
                     <stepCountingHillClimbingSize>400</stepCountingHillClimbingSize>
-                    <entityTabuSize>5</entityTabuSize>
+                    <entityTabuRatio>0.02</entityTabuRatio>
                 </acceptor>
                 <forager>
                     <acceptedCountLimit>1</acceptedCountLimit>
@@ -211,7 +218,7 @@
             <localSearch>
                 <acceptor>
                     <stepCountingHillClimbingSize>400</stepCountingHillClimbingSize>
-                    <entityTabuSize>5</entityTabuSize>
+                    <entityTabuRatio>0.02</entityTabuRatio>
                 </acceptor>
                 <forager>
                     <acceptedCountLimit>1</acceptedCountLimit>
@@ -275,21 +282,7 @@
     </solverBenchmark>
     </#list>
     
-    <#list [200, 300, 500,600, 800, 1200] as acceptedCountLimit>
-    <solverBenchmark>
-        <name>Late acceptance ${acceptedCountLimit}</name>
-        <solver>
-            <localSearch>
-                <acceptor>
-                    <lateAcceptanceSize>400</lateAcceptanceSize>
-                </acceptor>
-                <forager>
-                    <acceptedCountLimit>1</acceptedCountLimit>
-                </forager>
-            </localSearch>
-        </solver>
-    </solverBenchmark>
-    </#list>
+   
    
 
 </plannerBenchmark>
