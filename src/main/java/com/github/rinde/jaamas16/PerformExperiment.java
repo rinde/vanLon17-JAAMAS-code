@@ -32,6 +32,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
 
 import org.optaplanner.core.config.solver.SolverConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
@@ -96,6 +98,8 @@ import net.openhft.affinity.AffinityLock;
  * @author Rinde van Lon
  */
 public class PerformExperiment {
+  static final Logger LOGGER = LoggerFactory.getLogger(PerformExperiment.class);
+
   static final String VANLON_HOLVOET_DATASET = "files/vanLonHolvoet15/";
   static final String GENDREAU_DATASET = "files/gendreau2006/requests";
   static final String RESULTS_MAIN_DIR = "files/results/";
@@ -486,7 +490,7 @@ public class PerformExperiment {
         final StatisticsDTO stats =
           PostProcessors.statisticsPostProcessor().collectResults(sim, args);
 
-        System.out.println("success: " + args);
+        LOGGER.info("success: {}", args);
 
         if (logger == null) {
           return ExperimentInfo.create(new ArrayList<LogEntry>(),
