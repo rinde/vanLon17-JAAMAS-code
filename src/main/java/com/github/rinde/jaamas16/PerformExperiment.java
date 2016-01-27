@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
+import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
@@ -210,6 +212,21 @@ public class PerformExperiment {
         .withObjectiveFunction(objFunc)
         .buildRealtimeSolverSupplier();
 
+    final Map<String, SolverConfig> configs =
+      OptaplannerSolvers.getConfigsFromBenchmark(
+        "com/github/rinde/jaamas16/benchmarkConfig.xml");
+
+    final Map<String, StochasticSupplier<RealtimeSolver>> optaplannerSolvers =
+      new LinkedHashMap<>();
+    for (final Entry<String, SolverConfig> config : configs.entrySet()) {
+      optaplannerSolvers.put(config.getKey(),
+        OptaplannerSolvers.builder()
+            .withUnimprovedMsLimit(10000L)
+            .withSolverConfig(config.getValue())
+            .withName(config.getKey())
+            .buildRealtimeSolverSupplier());
+    }
+
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
         .build(objFunc)
@@ -227,7 +244,8 @@ public class PerformExperiment {
             .setName("ReAuction-2optRP-cihBID")
             .addEventHandler(AddVehicleEvent.class,
               DefaultTruckFactory.builder()
-                  .setRoutePlanner(RtSolverRoutePlanner.supplier(opt2))
+                  .setRoutePlanner(RtSolverRoutePlanner
+                      .supplier(optaplannerSolvers.get("First-fit-decreasing")))
                   .setCommunicator(RtSolverBidder.supplier(objFunc, cih,
                     RtSolverBidder.BidFunctions.PLAIN))
                   .setLazyComputation(false)
@@ -331,20 +349,12 @@ public class PerformExperiment {
     // .withValidated(true)
     // .buildSolver()));
 
-    final Map<String, SolverConfig> configs =
-      OptaplannerSolvers.getConfigsFromBenchmark(
-        "com/github/rinde/jaamas16/benchmarkConfig.xml");
-
-    for (final Entry<String, SolverConfig> config : configs.entrySet()) {
+    for (final Entry<String, StochasticSupplier<RealtimeSolver>> config : optaplannerSolvers
+        .entrySet()) {
       experimentBuilder.addConfiguration(
         MASConfiguration.pdptwBuilder()
             .addModel(
-              RtCentral.builder(
-                OptaplannerSolvers.builder()
-                    .withUnimprovedMsLimit(10000L)
-                    .withSolverConfig(config.getValue())
-                    .withName(config.getKey())
-                    .buildRealtimeSolverSupplier())
+              RtCentral.builder(config.getValue())
                   .withContinuousUpdates(true)
                   .withThreadGrouping(true))
             .addModel(RealtimeClockLogger.builder())
@@ -358,13 +368,13 @@ public class PerformExperiment {
         .withAutoClose()
         .withSpeedUp(8)
         // .withFullScreen()
-        .withTitleAppendix("AAMAS 2016 Experiment")
+        .withTitleAppendix("JAAMAS 2016 Experiment")
         .with(RoadUserRenderer.builder()
             .withToStringLabel())
         .with(RouteRenderer.builder())
         .with(PDPModelRenderer.builder())
         .with(PlaneRoadModelRenderer.builder())
-        // .with(AuctionPanel.builder())
+        .with(AuctionPanel.builder())
         .with(TimeLinePanel.builder())
         .with(RtSolverPanel.builder())
         .withResolution(1280, 1024));
