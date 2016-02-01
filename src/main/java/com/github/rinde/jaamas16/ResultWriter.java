@@ -48,7 +48,7 @@ abstract class ResultWriter implements ResultListener {
   final File experimentDirectory;
   final File timeDeviationsDirectory;
 
-  public ResultWriter(File target) {
+  ResultWriter(File target) {
     experimentDirectory = createExperimentDir(target);
 
     timeDeviationsDirectory = new File(experimentDirectory, "time-deviations");

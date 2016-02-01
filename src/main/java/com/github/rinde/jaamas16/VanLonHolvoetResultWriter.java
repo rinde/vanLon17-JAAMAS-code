@@ -34,9 +34,6 @@ import com.google.common.io.Files;
  */
 public class VanLonHolvoetResultWriter extends ResultWriter {
 
-  /**
-   * @param target
-   */
   public VanLonHolvoetResultWriter(File target) {
     super(target);
   }

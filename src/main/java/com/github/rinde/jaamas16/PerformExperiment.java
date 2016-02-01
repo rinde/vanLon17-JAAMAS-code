@@ -99,12 +99,14 @@ import net.openhft.affinity.AffinityLock;
  *
  * @author Rinde van Lon
  */
-public class PerformExperiment {
+public final class PerformExperiment {
   static final Logger LOGGER = LoggerFactory.getLogger(PerformExperiment.class);
 
   static final String VANLON_HOLVOET_DATASET = "files/vanLonHolvoet15/";
   static final String GENDREAU_DATASET = "files/gendreau2006/requests";
   static final String RESULTS_MAIN_DIR = "files/results/";
+
+  private PerformExperiment() {}
 
   enum ExperimentType {
     GENDREAU(Gendreau06ObjectiveFunction.instance()) {

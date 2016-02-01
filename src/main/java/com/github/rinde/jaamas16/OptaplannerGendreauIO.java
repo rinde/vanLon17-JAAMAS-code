@@ -42,7 +42,9 @@ import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06Scenario;
  *
  * @author Rinde van Lon
  */
-public class OptaplannerGendreauIO implements SolutionFileIO {
+public final class OptaplannerGendreauIO implements SolutionFileIO {
+
+  public OptaplannerGendreauIO() {}
 
   @Override
   public String getInputFileExtension() {
@@ -66,7 +68,7 @@ public class OptaplannerGendreauIO implements SolutionFileIO {
           .withEventHandler(TimeOutEvent.class, TimeOutEvent.ignoreHandler())
           .withEventHandler(AddDepotEvent.class, AddDepotEvent.defaultHandler())
           .withEventHandler(AddParcelEvent.class,
-            AddParcelEvent.defaultHandler())// namedHandler())
+            AddParcelEvent.defaultHandler())
           .withEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler());
 
     final Simulator sim = Simulator.builder()

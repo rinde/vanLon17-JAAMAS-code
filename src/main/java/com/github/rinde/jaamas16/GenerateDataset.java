@@ -20,28 +20,30 @@ import static java.util.Arrays.asList;
 import com.github.rinde.datgen.pdptw.DatasetGenerator;
 
 /**
- * 
+ *
  * @author Rinde van Lon
  */
-public class GenerateDataset {
+public final class GenerateDataset {
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		final long time = System.currentTimeMillis();
-	    final DatasetGenerator generator = DatasetGenerator.builder()
-	        .setDatasetDir("files/dataset/")
-	        .setDynamismLevels(asList(.2, .5, .8))
-	        .setUrgencyLevels(asList(5L, 20L, 35L))
-	        .setScaleLevels(asList(1d, 5d, 10d))
-	        .setNumInstances(10)
-	        .build();
+  private GenerateDataset() {}
 
-	    generator.generate();
-	    final long duration = System.currentTimeMillis() - time;
-	    System.out.println("Done, in " + duration / 1000d + "s");
+  /**
+   * @param args Ignored.
+   */
+  public static void main(String[] args) {
+    final long time = System.currentTimeMillis();
+    final DatasetGenerator generator = DatasetGenerator.builder()
+        .setDatasetDir("files/dataset/")
+        .setDynamismLevels(asList(.2, .5, .8))
+        .setUrgencyLevels(asList(5L, 20L, 35L))
+        .setScaleLevels(asList(1d, 5d, 10d))
+        .setNumInstances(10)
+        .build();
 
-	}
+    generator.generate();
+    final long duration = System.currentTimeMillis() - time;
+    System.out.println("Done, in " + duration / 1000d + "s");
+
+  }
 
 }

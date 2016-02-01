@@ -32,6 +32,8 @@ import com.google.common.io.Files;
  * @author Rinde van Lon
  */
 public class GendreauResultWriter extends ResultWriter {
+  private static final double VEHICLES_TO_SCALE = .1;
+  private static final String SEPARATOR = "-";
 
   ImmutableMap<String, ImmutableMap<Property, String>> properties;
 
@@ -45,7 +47,9 @@ public class GendreauResultWriter extends ResultWriter {
           .read(new File(MeasureGendreau.PROPS_FILE))) {
 
         final String id =
-          map.get(Property.PROBLEM_CLASS) + "-" + map.get(Property.INSTANCE_ID);
+          map.get(Property.PROBLEM_CLASS)
+              + SEPARATOR
+              + map.get(Property.INSTANCE_ID);
         mapBuilder.put(id, map);
       }
       properties = mapBuilder.build();
@@ -56,7 +60,6 @@ public class GendreauResultWriter extends ResultWriter {
 
   @Override
   public void receive(SimulationResult result) {
-
     final String configName = result.getSimArgs().getMasConfig().getName();
     final File targetFile = new File(experimentDirectory, configName + ".csv");
 
@@ -64,9 +67,7 @@ public class GendreauResultWriter extends ResultWriter {
       createCSVWithHeader(targetFile);
     }
     appendSimResult(result, targetFile);
-
     writeTimeLog(result);
-
   }
 
   @Override
@@ -85,7 +86,7 @@ public class GendreauResultWriter extends ResultWriter {
   void appendSimResult(SimulationResult sr, File destFile) {
     final String pc = sr.getSimArgs().getScenario().getProblemClass().getId();
     final String id = sr.getSimArgs().getScenario().getProblemInstanceId();
-    final String scenId = Joiner.on("-").join(pc, id);
+    final String scenId = Joiner.on(SEPARATOR).join(pc, id);
 
     final Map<Property, String> props = properties.get(scenId);
     final int numVehicles = Integer.parseInt(props.get(Property.NUM_VEHICLES));
@@ -96,7 +97,7 @@ public class GendreauResultWriter extends ResultWriter {
             .put(OutputFields.SCENARIO_ID, scenId)
             .put(OutputFields.DYNAMISM, props.get(Property.DYNAMISM))
             .put(OutputFields.URGENCY, props.get(Property.URGENCY_MEAN))
-            .put(OutputFields.SCALE, numVehicles / 10)
+            .put(OutputFields.SCALE, numVehicles * VEHICLES_TO_SCALE)
             .put(OutputFields.NUM_ORDERS, props.get(Property.NUM_ORDERS))
             .put(OutputFields.NUM_VEHICLES, numVehicles)
             .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed())

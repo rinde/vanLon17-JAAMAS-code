@@ -45,8 +45,7 @@ import com.google.common.io.Files;
  *
  * @author Rinde van Lon
  */
-public class MeasureGendreau {
-
+public final class MeasureGendreau {
   static final String PROPS_FILE = "files/gendreau-properties.csv";
 
   static final ImmutableMap<String, ImmutableMap<Property, String>> MAP =
@@ -157,6 +156,8 @@ public class MeasureGendreau {
             .put(Property.GENDR_COST, "694")
             .build())
         .build();
+
+  private MeasureGendreau() {}
 
   /**
    * @param args

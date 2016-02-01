@@ -22,10 +22,12 @@ import org.optaplanner.benchmark.api.PlannerBenchmarkFactory;
  *
  * @author Rinde van Lon
  */
-public class OfflineOptaplannerBenchmark {
+public final class OfflineOptaplannerBenchmark {
+
+  private OfflineOptaplannerBenchmark() {}
 
   /**
-   * @param args
+   * @param args Ignored.
    */
   public static void main(String[] args) {
     final PlannerBenchmarkFactory plannerBenchmarkFactory =
