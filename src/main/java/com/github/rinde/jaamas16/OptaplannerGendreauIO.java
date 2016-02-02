@@ -92,7 +92,8 @@ public final class OptaplannerGendreauIO implements SolutionFileIO {
   }
 
   @Override
-  public void write(Solution solution, File outputSolutionFile) {
+  public void write(@SuppressWarnings("rawtypes") Solution solution,
+      File outputSolutionFile) {
     throw new UnsupportedOperationException();
   }
 

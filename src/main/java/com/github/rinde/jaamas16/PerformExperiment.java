@@ -20,19 +20,12 @@ import static com.google.common.base.Verify.verifyNotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nullable;
 
-import org.optaplanner.core.config.solver.SolverConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +39,7 @@ import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
 import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolvers;
+import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolvers.OptaplannerFactory;
 import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
@@ -53,7 +47,6 @@ import com.github.rinde.rinsim.central.rt.RtSolverModel;
 import com.github.rinde.rinsim.central.rt.RtSolverPanel;
 import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
-import com.github.rinde.rinsim.core.SimulatorAPI;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
@@ -79,7 +72,6 @@ import com.github.rinde.rinsim.scenario.ScenarioConverters;
 import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.scenario.StopConditions;
 import com.github.rinde.rinsim.scenario.TimedEvent;
-import com.github.rinde.rinsim.scenario.TimedEventHandler;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06Parser;
 import com.github.rinde.rinsim.ui.View;
@@ -214,24 +206,11 @@ public final class PerformExperiment {
       .withObjectiveFunction(objFunc)
       .buildRealtimeSolverSupplier();
 
-    final Map<String, SolverConfig> configs =
-      OptaplannerSolvers.getConfigsFromBenchmark(
-        "com/github/rinde/jaamas16/benchmarkConfig.xml");
-
-    final Map<String, StochasticSupplier<RealtimeSolver>> optaplannerSolvers =
-      new LinkedHashMap<>();
-    for (final Entry<String, SolverConfig> config : configs.entrySet()) {
-      optaplannerSolvers.put(config.getKey(),
-        OptaplannerSolvers.builder()
-          .withUnimprovedMsLimit(10000L)
-          .withSolverConfig(config.getValue())
-          .withName(config.getKey())
-          .buildRealtimeSolverSupplier());
-    }
+    final OptaplannerFactory optaplannerFactory = OptaplannerSolvers
+      .getFactoryFromBenchmark("com/github/rinde/jaamas16/benchmarkConfig.xml");
 
     final long time = System.currentTimeMillis();
-    final Experiment.Builder experimentBuilder = Experiment
-      .build(objFunc)
+    final Experiment.Builder experimentBuilder = Experiment.build(objFunc)
       .computeLocal()
       .withRandomSeed(123)
       .withThreads(11)
@@ -247,8 +226,12 @@ public final class PerformExperiment {
         .addEventHandler(AddVehicleEvent.class,
           DefaultTruckFactory.builder()
             .setRoutePlanner(RtSolverRoutePlanner
-              .supplier(optaplannerSolvers.get("First-fit-decreasing")))
-            .setCommunicator(RtSolverBidder.supplier(objFunc, cih,
+              .supplier(
+                optaplannerFactory.create(50L, "First-fit-decreasing")))
+            .setCommunicator(RtSolverBidder.supplier(objFunc,
+              optaplannerFactory.create(500L,
+                "Tabu-search-acceptCountLim-1000-tabuRatio-0.02"),
+              // cih,
               RtSolverBidder.BidFunctions.PLAIN))
             .setLazyComputation(false)
             .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
@@ -351,17 +334,16 @@ public final class PerformExperiment {
     // .withValidated(true)
     // .buildSolver()));
 
-    for (final Entry<String, StochasticSupplier<RealtimeSolver>> config : optaplannerSolvers
-      .entrySet()) {
+    for (final String name : optaplannerFactory.getAvailableSolvers()) {
       experimentBuilder.addConfiguration(
         MASConfiguration.pdptwBuilder()
           .addModel(
-            RtCentral.builder(config.getValue())
+            RtCentral.builder(optaplannerFactory.create(10000L, name))
               .withContinuousUpdates(true)
               .withThreadGrouping(true))
           .addModel(RealtimeClockLogger.builder())
           .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-          .setName(config.getKey())
+          .setName(name)
           .build());
     }
 
@@ -530,35 +512,5 @@ public final class PerformExperiment {
       }
 
     }
-  }
-
-  static class DebugParcelCreator
-      implements TimedEventHandler<AddParcelEvent>, Serializable {
-
-    private static final long serialVersionUID = -3604876394924095797L;
-    Map<SimulatorAPI, AtomicLong> map;
-
-    DebugParcelCreator() {
-      map = new ConcurrentHashMap<>();
-    }
-
-    @Override
-    public void handleTimedEvent(AddParcelEvent event, SimulatorAPI simulator) {
-
-      if (!map.containsKey(simulator)) {
-        map.put(simulator, new AtomicLong());
-      }
-      final String str =
-        "p" + Long.toString(map.get(simulator).getAndIncrement());
-
-      simulator.register(new Parcel(event.getParcelDTO()) {
-        @Override
-        public String toString() {
-          return str;
-        }
-      });
-
-    }
-
   }
 }
