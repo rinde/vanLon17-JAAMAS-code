@@ -59,32 +59,32 @@ public final class OptaplannerGendreauIO implements SolutionFileIO {
   @Override
   public PDPSolution read(File inputSolutionFile) {
     final Gendreau06Scenario scenario = Gendreau06Parser.parser()
-        .addFile(inputSolutionFile)
-        .offline()
-        .parse().get(0);
+      .addFile(inputSolutionFile)
+      .offline()
+      .parse().get(0);
 
     final ScenarioController.Builder scenContrBuilder =
       ScenarioController.builder(scenario)
-          .withEventHandler(TimeOutEvent.class, TimeOutEvent.ignoreHandler())
-          .withEventHandler(AddDepotEvent.class, AddDepotEvent.defaultHandler())
-          .withEventHandler(AddParcelEvent.class,
-            AddParcelEvent.defaultHandler())
-          .withEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler());
+        .withEventHandler(TimeOutEvent.class, TimeOutEvent.ignoreHandler())
+        .withEventHandler(AddDepotEvent.class, AddDepotEvent.defaultHandler())
+        .withEventHandler(AddParcelEvent.class,
+          AddParcelEvent.defaultHandler())
+        .withEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler());
 
     final Simulator sim = Simulator.builder()
-        .addModel(scenContrBuilder)
-        .build();
+      .addModel(scenContrBuilder)
+      .build();
 
     sim.tick();
 
     final SimulationConverter conv = Solvers.converterBuilder()
-        .with(sim)
-        .build();
+      .with(sim)
+      .build();
 
     final GlobalStateObject gso =
       conv.convert(SolveArgs.create()
-          .useAllParcels()
-          .useEmptyRoutes(scenario.getProblemClass().vehicles)).state;
+        .useAllParcels()
+        .useEmptyRoutes(scenario.getProblemClass().vehicles)).state;
 
     checkState(!gso.getVehicles().isEmpty());
 

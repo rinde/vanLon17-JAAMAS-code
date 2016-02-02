@@ -44,12 +44,12 @@ public class GendreauResultWriter extends ResultWriter {
       final ImmutableMap.Builder<String, ImmutableMap<Property, String>> mapBuilder =
         ImmutableMap.builder();
       for (final ImmutableMap<Property, String> map : MeasureGendreau
-          .read(new File(MeasureGendreau.PROPS_FILE))) {
+        .read(new File(MeasureGendreau.PROPS_FILE))) {
 
         final String id =
           map.get(Property.PROBLEM_CLASS)
-              + SEPARATOR
-              + map.get(Property.INSTANCE_ID);
+            + SEPARATOR
+            + map.get(Property.INSTANCE_ID);
         mapBuilder.put(id, map);
       }
       properties = mapBuilder.build();
@@ -73,13 +73,13 @@ public class GendreauResultWriter extends ResultWriter {
   @Override
   Iterable<Enum<?>> getFields() {
     return ImmutableList.<Enum<?>>builder()
-        .add(OutputFields.values())
-        .add(Property.GENDR_ALG)
-        .add(Property.GENDR_COST)
-        .add(Property.GENDR_TT)
-        .add(Property.GENDR_TARD)
-        .add(Property.GENDR_OT)
-        .build();
+      .add(OutputFields.values())
+      .add(Property.GENDR_ALG)
+      .add(Property.GENDR_COST)
+      .add(Property.GENDR_TT)
+      .add(Property.GENDR_TARD)
+      .add(Property.GENDR_OT)
+      .build();
   }
 
   @Override
@@ -94,25 +94,25 @@ public class GendreauResultWriter extends ResultWriter {
     try {
       final ImmutableMap.Builder<Enum<?>, Object> map =
         ImmutableMap.<Enum<?>, Object>builder()
-            .put(OutputFields.SCENARIO_ID, scenId)
-            .put(OutputFields.DYNAMISM, props.get(Property.DYNAMISM))
-            .put(OutputFields.URGENCY, props.get(Property.URGENCY_MEAN))
-            .put(OutputFields.SCALE, numVehicles * VEHICLES_TO_SCALE)
-            .put(OutputFields.NUM_ORDERS, props.get(Property.NUM_ORDERS))
-            .put(OutputFields.NUM_VEHICLES, numVehicles)
-            .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed())
-            .put(Property.GENDR_ALG, props.get(Property.GENDR_ALG))
-            .put(Property.GENDR_COST, props.get(Property.GENDR_COST))
-            .put(Property.GENDR_TT, props.get(Property.GENDR_TT))
-            .put(Property.GENDR_TARD, props.get(Property.GENDR_TARD))
-            .put(Property.GENDR_OT, props.get(Property.GENDR_OT));
+          .put(OutputFields.SCENARIO_ID, scenId)
+          .put(OutputFields.DYNAMISM, props.get(Property.DYNAMISM))
+          .put(OutputFields.URGENCY, props.get(Property.URGENCY_MEAN))
+          .put(OutputFields.SCALE, numVehicles * VEHICLES_TO_SCALE)
+          .put(OutputFields.NUM_ORDERS, props.get(Property.NUM_ORDERS))
+          .put(OutputFields.NUM_VEHICLES, numVehicles)
+          .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed())
+          .put(Property.GENDR_ALG, props.get(Property.GENDR_ALG))
+          .put(Property.GENDR_COST, props.get(Property.GENDR_COST))
+          .put(Property.GENDR_TT, props.get(Property.GENDR_TT))
+          .put(Property.GENDR_TARD, props.get(Property.GENDR_TARD))
+          .put(Property.GENDR_OT, props.get(Property.GENDR_OT));
 
       addSimOutputs(map, sr);
 
       final String line = MeasureGendreau
-          .appendValuesTo(new StringBuilder(), map.build(), getFields())
-          .append(System.lineSeparator())
-          .toString();
+        .appendValuesTo(new StringBuilder(), map.build(), getFields())
+        .append(System.lineSeparator())
+        .toString();
       Files.append(line, destFile, Charsets.UTF_8);
     } catch (final IOException e) {
       throw new IllegalStateException(e);

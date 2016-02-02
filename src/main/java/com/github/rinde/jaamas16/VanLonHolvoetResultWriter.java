@@ -59,29 +59,29 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
     try {
       final String scenarioName = Joiner.on("-").join(pc, id);
       final List<String> propsStrings = Files.readLines(new File(
-          PerformExperiment.VANLON_HOLVOET_DATASET + scenarioName
-              + ".properties"),
+        PerformExperiment.VANLON_HOLVOET_DATASET + scenarioName
+          + ".properties"),
         Charsets.UTF_8);
       final Map<String, String> properties = Splitter.on("\n")
-          .withKeyValueSeparator(" = ")
-          .split(Joiner.on("\n").join(propsStrings));
+        .withKeyValueSeparator(" = ")
+        .split(Joiner.on("\n").join(propsStrings));
 
       final ImmutableMap.Builder<Enum<?>, Object> map =
         ImmutableMap.<Enum<?>, Object>builder()
-            .put(OutputFields.SCENARIO_ID, scenarioName)
-            .put(OutputFields.DYNAMISM, properties.get("dynamism_bin"))
-            .put(OutputFields.URGENCY, properties.get("urgency"))
-            .put(OutputFields.SCALE, properties.get("scale"))
-            .put(OutputFields.NUM_ORDERS, properties.get("AddParcelEvent"))
-            .put(OutputFields.NUM_VEHICLES, properties.get("AddVehicleEvent"))
-            .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed());
+          .put(OutputFields.SCENARIO_ID, scenarioName)
+          .put(OutputFields.DYNAMISM, properties.get("dynamism_bin"))
+          .put(OutputFields.URGENCY, properties.get("urgency"))
+          .put(OutputFields.SCALE, properties.get("scale"))
+          .put(OutputFields.NUM_ORDERS, properties.get("AddParcelEvent"))
+          .put(OutputFields.NUM_VEHICLES, properties.get("AddVehicleEvent"))
+          .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed());
 
       addSimOutputs(map, sr);
 
       final String line = MeasureGendreau
-          .appendValuesTo(new StringBuilder(), map.build(), getFields())
-          .append(System.lineSeparator())
-          .toString();
+        .appendValuesTo(new StringBuilder(), map.build(), getFields())
+        .append(System.lineSeparator())
+        .toString();
       Files.append(line, destFile, Charsets.UTF_8);
     } catch (final IOException e) {
       throw new IllegalStateException(e);

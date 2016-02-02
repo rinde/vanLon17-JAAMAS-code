@@ -63,24 +63,24 @@ abstract class ResultWriter implements ResultListener {
 
     final StringBuilder sb = new StringBuilder("Experiment summary");
     sb.append(System.lineSeparator())
-        .append("Number of simulations: ")
-        .append(numberOfSimulations)
-        .append(System.lineSeparator())
-        .append("Number of configurations: ")
-        .append(configurations.size())
-        .append(System.lineSeparator())
-        .append("Number of scenarios: ")
-        .append(scenarios.size())
-        .append(System.lineSeparator())
-        .append("Number of repetitions: ")
-        .append(repetitions)
-        .append(System.lineSeparator())
-        .append("Configurations:")
-        .append(System.lineSeparator());
+      .append("Number of simulations: ")
+      .append(numberOfSimulations)
+      .append(System.lineSeparator())
+      .append("Number of configurations: ")
+      .append(configurations.size())
+      .append(System.lineSeparator())
+      .append("Number of scenarios: ")
+      .append(scenarios.size())
+      .append(System.lineSeparator())
+      .append("Number of repetitions: ")
+      .append(repetitions)
+      .append(System.lineSeparator())
+      .append("Configurations:")
+      .append(System.lineSeparator());
 
     for (final MASConfiguration config : configurations) {
       sb.append(config.getName())
-          .append(System.lineSeparator());
+        .append(System.lineSeparator());
     }
 
     final File setup = new File(experimentDirectory, "experiment-setup.txt");
@@ -125,7 +125,7 @@ abstract class ResultWriter implements ResultListener {
       Files.createParentDirs(f);
       Files.append(
         Joiner.on(",").appendTo(new StringBuilder(), getFields())
-            .append(System.lineSeparator()),
+          .append(System.lineSeparator()),
         f,
         Charsets.UTF_8);
     } catch (final IOException e1) {
@@ -152,7 +152,7 @@ abstract class ResultWriter implements ResultListener {
           sr.getSimArgs().getRandomSeed(),
           tickInfoListSize,
           tickInfoListSize == 0 ? 0
-              : sumIatNs / tickInfoListSize,
+            : sumIatNs / tickInfoListSize,
           info.getRtCount(),
           info.getStCount() + "\n"), target, Charsets.UTF_8);
       } catch (final IOException e) {
@@ -181,37 +181,37 @@ abstract class ResultWriter implements ResultListener {
       SimulationResult sr) {
     if (sr.getResultObject() instanceof FailureStrategy) {
       map.put(OutputFields.COST, -1)
-          .put(OutputFields.TRAVEL_TIME, -1)
-          .put(OutputFields.TARDINESS, -1)
-          .put(OutputFields.OVER_TIME, -1)
-          .put(OutputFields.IS_VALID, false)
-          .put(OutputFields.COMP_TIME, -1)
-          .put(OutputFields.NUM_REAUCTIONS, -1)
-          .put(OutputFields.NUM_UNSUC_REAUCTIONS, -1)
-          .put(OutputFields.NUM_FAILED_REAUCTIONS, -1);
+        .put(OutputFields.TRAVEL_TIME, -1)
+        .put(OutputFields.TARDINESS, -1)
+        .put(OutputFields.OVER_TIME, -1)
+        .put(OutputFields.IS_VALID, false)
+        .put(OutputFields.COMP_TIME, -1)
+        .put(OutputFields.NUM_REAUCTIONS, -1)
+        .put(OutputFields.NUM_UNSUC_REAUCTIONS, -1)
+        .put(OutputFields.NUM_FAILED_REAUCTIONS, -1);
     } else {
       final ExperimentInfo ei = (ExperimentInfo) sr.getResultObject();
       final StatisticsDTO stats = ei.getStats();
       final Gendreau06ObjectiveFunction objFunc =
         (Gendreau06ObjectiveFunction) sr.getSimArgs().getObjectiveFunction();
       map.put(OutputFields.COST, objFunc.computeCost(stats))
-          .put(OutputFields.TRAVEL_TIME, objFunc.travelTime(stats))
-          .put(OutputFields.TARDINESS, objFunc.tardiness(stats))
-          .put(OutputFields.OVER_TIME, objFunc.overTime(stats))
-          .put(OutputFields.IS_VALID, objFunc.isValidResult(stats))
-          .put(OutputFields.COMP_TIME, stats.computationTime);
+        .put(OutputFields.TRAVEL_TIME, objFunc.travelTime(stats))
+        .put(OutputFields.TARDINESS, objFunc.tardiness(stats))
+        .put(OutputFields.OVER_TIME, objFunc.overTime(stats))
+        .put(OutputFields.IS_VALID, objFunc.isValidResult(stats))
+        .put(OutputFields.COMP_TIME, stats.computationTime);
 
       if (ei.getAuctionStats().isPresent()) {
         final AuctionStats aStats = ei.getAuctionStats().get();
         map.put(OutputFields.NUM_REAUCTIONS, aStats.getNumReauctions())
-            .put(OutputFields.NUM_UNSUC_REAUCTIONS,
-              aStats.getNumUnsuccesfulReauctions())
-            .put(OutputFields.NUM_FAILED_REAUCTIONS,
-              aStats.getNumFailedReauctions());
+          .put(OutputFields.NUM_UNSUC_REAUCTIONS,
+            aStats.getNumUnsuccesfulReauctions())
+          .put(OutputFields.NUM_FAILED_REAUCTIONS,
+            aStats.getNumFailedReauctions());
       } else {
         map.put(OutputFields.NUM_REAUCTIONS, 0)
-            .put(OutputFields.NUM_UNSUC_REAUCTIONS, 0)
-            .put(OutputFields.NUM_FAILED_REAUCTIONS, 0);
+          .put(OutputFields.NUM_UNSUC_REAUCTIONS, 0)
+          .put(OutputFields.NUM_FAILED_REAUCTIONS, 0);
       }
 
       if (!objFunc.isValidResult(stats)) {
@@ -261,7 +261,7 @@ abstract class ResultWriter implements ResultListener {
 
   static File createExperimentDir(File target) {
     final String timestamp = ISODateTimeFormat.dateHourMinuteSecond()
-        .print(System.currentTimeMillis());
+      .print(System.currentTimeMillis());
     final File experimentDirectory = new File(target, timestamp);
     experimentDirectory.mkdirs();
 

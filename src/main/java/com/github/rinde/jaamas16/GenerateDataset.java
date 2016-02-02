@@ -33,12 +33,12 @@ public final class GenerateDataset {
   public static void main(String[] args) {
     final long time = System.currentTimeMillis();
     final DatasetGenerator generator = DatasetGenerator.builder()
-        .setDatasetDir("files/dataset/")
-        .setDynamismLevels(asList(.2, .5, .8))
-        .setUrgencyLevels(asList(5L, 20L, 35L))
-        .setScaleLevels(asList(1d, 5d, 10d))
-        .setNumInstances(10)
-        .build();
+      .setDatasetDir("files/dataset/")
+      .setDynamismLevels(asList(.2, .5, .8))
+      .setUrgencyLevels(asList(5L, 20L, 35L))
+      .setScaleLevels(asList(1d, 5d, 10d))
+      .setNumInstances(10)
+      .build();
 
     generator.generate();
     final long duration = System.currentTimeMillis() - time;
