@@ -3,7 +3,7 @@ library("ggplot2")
 library("data.table")
 
 script.dir <- dirname(sys.frame(1)$ofile)
-target.dir <- paste(script.dir,"/../../../files/results/BEST/GENDREAU/2015-11-30/time-deviations/",sep="")
+target.dir <- paste(script.dir,"/../../../files/results/BEST/GENDREAU/2015-12-02T16:13:32/time-deviations/",sep="")
 
 csv_files <- list.files(path=target.dir,pattern=".*-interarrivaltimes.csv")
 alldata <- NULL

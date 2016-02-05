@@ -2,6 +2,7 @@ library("tikzDevice")
 library("ggplot2")
 library("data.table")
 library("reshape2")
+library(plyr)
 
 script.dir <- dirname(sys.frame(1)$ofile)
 source(paste(script.dir,"multiplot.r",sep="/"))
@@ -10,10 +11,13 @@ target.dir <- paste(script.dir,"/../../../files/results/BEST/GENDREAU/",sep="")
 # 2016-01-15T15/19/08-Optaplanner-Benchmark
 
 
-dirs <- c("2016-01-15T15:19:08-Optaplanner-Benchmark-part1",
-          "2016-01-16T21:02:54-Optaplanner-Benchmark-part2")
+dirs <- c(#"2016-01-15T15:19:08-Optaplanner-Benchmark-part1",
+          #"2016-01-16T21:02:54-Optaplanner-Benchmark-part2")
+          #"2016-01-19T17:21:46-Optaplanner-Benchmark-round2")
+          #"2016-01-22T10:46:25-Optaplanner-Benchmark-cont-update-round1")
+          "2016-01-29T18:31:26-Optaplanner-benchmark-3rep")
 
-files <- list("2016-01-04T18:03:53-OFFLINE/Optaplanner-validated-600s.csv")
+files <- list()# list("2016-01-04T18:03:53-OFFLINE/Optaplanner-validated-600s.csv")
 for( dir in dirs){
   temp.files <- list.files(paste(target.dir,dir,sep=""),pattern=".*-final.csv",recursive=T)
   temp.files <- paste(dir,"/",temp.files,sep="")
@@ -80,28 +84,41 @@ selectData <- function(data,columns,alg_name,alg_dir){
 }
 
 plot <- function(data,name){
-  melted <- melt(data,id.vars=c("scenario_id","class","alg","cost","name"),measure.vars=c("travel_time","tardiness","over_time"))
+  print("jo")
+  # convert data to long-format
+  melted <- melt(data,id.vars=c("scenario_id","class","alg","name"),measure.vars=c("cost","travel_time","tardiness","over_time"))
   # reorder such that appearance in data frame is used as plot order
   melted$alg <- factor(melted$alg, as.character(melted$alg))
   
-  means <- dcast(melted,scenario_id+class+alg+cost+name~variable,mean)
+  # convert data to wide-format, take average 
+  means <- dcast(melted,class+alg+name~variable,fun=mean)
+  print(head(means))
+  # convert data to long format, move cost to 'wide side'
   melted_means <- melt(means,id.vars=c("class","alg", "cost", "name"),measure.vars=c("travel_time","tardiness","over_time"))
+  print(head(melted_means))
   means2 <- dcast(melted_means,class+alg+cost+name~variable,sum)
+  print(head(means2))
   melted_means2 <- melt(means2,id.vars=c("class","alg", "cost", "name"),measure.vars=c("travel_time","tardiness","over_time"))
+  print(head(melted_means2))
   #print( head(melted_means2))
   #melted_means2 <- melted_means2[order(cost),]
-  
+  print("jajaja")
   #print(melted_means2)
   
   # to sum multiple standard deviations, we average the variances and then take the square root
   sds <- dcast(melted,scenario_id+class+alg~variable,var)
+  print("1")
   melted_sds <- melt(sds,id.vars=c("class","alg"),measure.vars=c("travel_time","tardiness","over_time"))#,measure.vars=c("travel_time_sd","tardiness_sd","over_time_sd"))
+  print("2")
   sds2 <- dcast(melted_sds,class+alg~variable,mean)
+  print("3")
   melted_sds2 <- melt(sds2,id.vars=c("class","alg"),measure.vars=c("travel_time","tardiness","over_time"))#,measure.vars=c("travel_time_sd","tardiness_sd","over_time_sd"))
-  
+  print("4")
+  print(head(melted_sds2))
   melted_means2[,"sd"] <- sqrt(melted_sds2$value)
-
+  print("5")
   limits <- aes(ymax = ymax, ymin=ymin)
+  print("heee")
 
   # move the error bars to their respective positions. they need to be shifted because we are creating a stacked bar chart.
   melted_means2[,"ymax"] <- melted_means2$value + melted_means2$sd
@@ -171,13 +188,14 @@ for( file in files){
 # filter out duplicate gendreau entries
 alldata <- rbind( unique(allgendreau), alldata)
 
-# calculate sum costs
-agg <- aggregate(cost~alg+class, alldata,FUN=sum)
+# calculate avg costs
+agg <- aggregate(cost~alg+class, alldata,FUN=mean)
 agg <- agg[with(agg, order(class,cost)), ]
 
 # assign rank to each algorithm
 number_of_rows <- nrow(subset(agg, class == unique(agg["class"])$class[1]))
 agg[,"rank"] <- seq.int(number_of_rows)
+
 
 avg_rank <- aggregate(rank~alg,agg,FUN=mean)
 avg_rank <- avg_rank[with(avg_rank, order(rank)), ]
@@ -185,27 +203,38 @@ write.table(avg_rank, file="rank-table.csv", sep=",", row.names=F)
 
 # multiply agg and sort it such that it can be merged with alldata
 agg <- agg[with(agg, order(class,alg)), ]
-agg <- agg[rep(seq_len(nrow(agg)), each=5),]
+#agg <- agg[rep(seq_len(nrow(agg)), each=5),]
+
+
 
 # sort using same order as agg, add sum_cost and rank columns
 alldata <- alldata[with(alldata, order(class,alg)), ]
-alldata[,"sum_cost"] <- agg["cost"]
-alldata[,"rank"] <- agg["rank"]
+
+alldata <- merge(alldata,agg,by=c("alg","class"))
+rename(alldata, c("cost.x"="cost", "cost.y"="avg_cost"))
+
+#break
+#alldata[match(alldata$scenario_id),"sum_cost"] <- agg["cost"]
+#alldata[,"rank"] <- agg["rank"]
+
+
+
+
 
 # sort on class,sum_cost
-alldata <- alldata[with(alldata, order(class,sum_cost)), ]
+#alldata <- alldata[with(alldata, order(class,sum_cost)), ]
 # create name which is rank + alg
 alldata$name <- paste( sprintf("%03d",alldata$rank),alldata$alg,sep="-")
 
 
 
-#alldata <- subset(alldata, rank < 5 | rank == 29 | alg =="gendreau")
+alldata <- subset(alldata, rank < 6 | rank == 36 | alg =="gendreau")
+
+
 
 short_low <- subset(alldata, class=="_240_24")
 short_high <-subset(alldata, class=="_240_33")
 long_low <- subset(alldata, class=="_450_24")
-
-
 
 p1 <- plot(short_low,"240_24")
 p2 <- plot(short_high,"240_33")
