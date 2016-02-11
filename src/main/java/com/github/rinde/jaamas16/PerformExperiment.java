@@ -110,7 +110,8 @@ public final class PerformExperiment {
           .setScenarioReader(
             Functions.compose(ScenarioConverter.TO_ONLINE_250,
               Gendreau06Parser.reader()))
-          .addResultListener(new GendreauResultWriter(experimentDir));;
+          // Gendreau06Parser.parser().setNumVehicles(10).asParseFunction()))
+          .addResultListener(new GendreauResultWriter(experimentDir));
       }
     },
 
@@ -118,7 +119,8 @@ public final class PerformExperiment {
       @Override
       void apply(Builder bldr) {
         bldr.addScenarios(
-          FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
+          FileProvider.builder()
+            .add(Paths.get(GENDREAU_DATASET))
             .filter("glob:**req_rapide_**"))
           .setScenarioReader(Functions.compose(ScenarioConverter.TO_OFFLINE,
             Gendreau06Parser.reader()))
@@ -147,9 +149,10 @@ public final class PerformExperiment {
     TIME_DEVIATION(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder().add(Paths.get(VANLON_HOLVOET_DATASET))
-            .filter("glob:**0.50-20-10.00-[0-9].scen"))
+        bldr
+          .addScenarios(
+            FileProvider.builder().add(Paths.get(VANLON_HOLVOET_DATASET))
+              .filter("glob:**0.50-20-10.00-[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_250))
           .repeat(10)
@@ -215,6 +218,7 @@ public final class PerformExperiment {
       .withRandomSeed(123)
       .withThreads(11)
       .repeat(1)
+      .withWarmup(30000)
       .addResultListener(new CommandLineProgress(System.out))
       .usePostProcessor(LogProcessor.INSTANCE);
 
@@ -223,14 +227,14 @@ public final class PerformExperiment {
     experimentBuilder
       .addConfiguration(MASConfiguration.pdptwBuilder()
         .setName("ReAuction-2optRP-cihBID")
+        // .addEventHandler(AddParcelEvent.class, AddParcelEvent.namedHandler())
         .addEventHandler(AddVehicleEvent.class,
           DefaultTruckFactory.builder()
-            .setRoutePlanner(RtSolverRoutePlanner
-              .supplier(
-                optaplannerFactory.create(50L, "First-fit-decreasing")))
-            .setCommunicator(RtSolverBidder.supplier(objFunc,
+            .setRoutePlanner(RtSolverRoutePlanner.supplier(
               optaplannerFactory.create(500L,
-                "Tabu-search-acceptCountLim-1000-tabuRatio-0.02"),
+                "Tabu-search-acceptCountLim-1000-tabuRatio-0.02")))
+            .setCommunicator(RtSolverBidder.supplier(objFunc,
+              optaplannerFactory.create(50L, "First-fit-decreasing"),
               // cih,
               RtSolverBidder.BidFunctions.PLAIN))
             .setLazyComputation(false)
@@ -350,7 +354,7 @@ public final class PerformExperiment {
     experimentBuilder.showGui(View.builder()
       .withAutoPlay()
       .withAutoClose()
-      .withSpeedUp(8)
+      .withSpeedUp(128)
       // .withFullScreen()
       .withTitleAppendix("JAAMAS 2016 Experiment")
       .with(RoadUserRenderer.builder()
@@ -400,10 +404,9 @@ public final class PerformExperiment {
           @Override
           public TimedEvent apply(TimedEvent input) {
             if (input instanceof AddParcelEvent) {
-              return AddParcelEvent.create(
-                Parcel.builder(((AddParcelEvent) input).getParcelDTO())
-                  .orderAnnounceTime(-1)
-                  .buildDTO());
+              return AddParcelEvent
+                .create(Parcel.builder(((AddParcelEvent) input).getParcelDTO())
+                  .orderAnnounceTime(-1).buildDTO());
             }
             return input;
           }
@@ -477,8 +480,8 @@ public final class PerformExperiment {
           final int reauctions = auctionModel.getNumAuctions() - parcels;
           final int unsuccessful = auctionModel.getNumUnsuccesfulAuctions();
           final int failed = auctionModel.getNumFailedAuctions();
-          aStats = Optional.of(
-            AuctionStats.create(parcels, reauctions, unsuccessful, failed));
+          aStats = Optional
+            .of(AuctionStats.create(parcels, reauctions, unsuccessful, failed));
         }
 
         final StatisticsDTO stats =
@@ -487,12 +490,9 @@ public final class PerformExperiment {
         LOGGER.info("success: {}", args);
 
         if (logger == null) {
-          return ExperimentInfo.create(new ArrayList<LogEntry>(),
-            0,
-            sim.getCurrentTime() / sim.getTimeStep(),
-            stats,
-            ImmutableList.<RealtimeTickInfo>of(),
-            aStats);
+          return ExperimentInfo.create(new ArrayList<LogEntry>(), 0,
+            sim.getCurrentTime() / sim.getTimeStep(), stats,
+            ImmutableList.<RealtimeTickInfo>of(), aStats);
         }
         return ExperimentInfo.create(logger.getLog(), logger.getRtCount(),
           logger.getStCount(), stats, logger.getTickInfoList(), aStats);
@@ -505,10 +505,9 @@ public final class PerformExperiment {
         System.out.println("Fail: " + args);
         e.printStackTrace();
         System.out.println(AffinityLock.dumpLocks());
-        // System.out.println(Joiner.on("\n").join(
-        // sim.getModelProvider().getModel(RealtimeClockLogger.class).getLog()));
-        // System.out.println("RETRY!");
+
         return FailureStrategy.RETRY;
+        // return FailureStrategy.ABORT_EXPERIMENT_RUN;
       }
 
     }
