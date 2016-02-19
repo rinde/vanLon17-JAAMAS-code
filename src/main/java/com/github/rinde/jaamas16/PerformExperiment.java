@@ -198,6 +198,8 @@ public final class PerformExperiment {
     System.out.println(System.getProperty("os.name") + " "
       + System.getProperty("os.version") + " "
       + System.getProperty("os.arch"));
+    checkArgument(System.getProperty("java.vm.name").contains("Server"),
+      "Experiments should be run in a JVM in server mode.");
     checkArgument(args.length > 2 && args[0].equals("-exp"),
       "The type of experiment that should be run must be specified as follows: "
         + "\'-exp vanlon15|gendreau|timedeviation\', this option must be the "
