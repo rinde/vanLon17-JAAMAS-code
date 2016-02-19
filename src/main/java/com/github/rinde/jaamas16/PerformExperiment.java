@@ -17,6 +17,7 @@ package com.github.rinde.jaamas16;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verifyNotNull;
+import static java.util.Arrays.asList;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +36,8 @@ import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
+import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder.BidFunction;
+import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder.BidFunctions;
 import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
@@ -188,6 +191,13 @@ public final class PerformExperiment {
   }
 
   public static void main(String[] args) throws IOException {
+    System.out.println(System.getProperty("java.vm.name") + ", "
+      + System.getProperty("java.vm.vendor") + ", "
+      + System.getProperty("java.vm.version") + " (runtime version: "
+      + System.getProperty("java.runtime.version") + ")");
+    System.out.println(System.getProperty("os.name") + " "
+      + System.getProperty("os.version") + " "
+      + System.getProperty("os.arch"));
     checkArgument(args.length > 2 && args[0].equals("-exp"),
       "The type of experiment that should be run must be specified as follows: "
         + "\'-exp vanlon15|gendreau|timedeviation\', this option must be the "
@@ -223,6 +233,51 @@ public final class PerformExperiment {
       .usePostProcessor(LogProcessor.INSTANCE);
 
     experimentType.apply(experimentBuilder);
+
+    final List<Long> routeplannerMs = asList(500L, 1000L, 2000L);
+    final List<Long> bidderMs = asList(50L, 100L, 250L);
+    final List<BidFunctions> bidFunctions = asList(BidFunctions.values());
+
+    for (final long rpMs : routeplannerMs) {
+      for (final long bMs : bidderMs) {
+        for (final BidFunction bf : bidFunctions) {
+          final String rpSolverName =
+            "Tabu-search-acceptCountLim-1000-tabuRatio-0.02";
+          final String bSolverName = "First-fit-decreasing";
+
+          experimentBuilder.addConfiguration(
+            MASConfiguration.pdptwBuilder()
+              .setName("ReAuction-RP-" + rpMs + "-" + rpSolverName + "-BID-"
+                + bMs + "-" + bSolverName + "-" + bf)
+              // .addEventHandler(AddParcelEvent.class,
+              // AddParcelEvent.namedHandler())
+              .addEventHandler(AddVehicleEvent.class,
+                DefaultTruckFactory.builder()
+                  .setRoutePlanner(RtSolverRoutePlanner.supplier(
+                    optaplannerFactory.create(rpMs, rpSolverName)))
+                  .setCommunicator(RtSolverBidder.supplier(objFunc,
+                    optaplannerFactory.create(bMs, bSolverName),
+                    // cih,
+                    bf))
+                  .setLazyComputation(false)
+                  .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
+                  .build())
+              .addModel(AuctionCommModel.builder(DoubleBid.class)
+                .withStopCondition(
+                  AuctionStopConditions.and(
+                    AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+                    AuctionStopConditions.<DoubleBid>or(
+                      AuctionStopConditions.<DoubleBid>allBidders(),
+                      AuctionStopConditions
+                        .<DoubleBid>maxAuctionDuration(5000)))))
+              .addModel(RtSolverModel.builder()
+                .withThreadPoolSize(3)
+                .withThreadGrouping(true))
+              .addModel(RealtimeClockLogger.builder())
+              .build());
+        }
+      }
+    }
 
     experimentBuilder
       .addConfiguration(MASConfiguration.pdptwBuilder()
