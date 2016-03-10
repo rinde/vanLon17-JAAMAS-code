@@ -229,7 +229,7 @@
     </solverBenchmark>
 
     <!-- SECOND BENCHMARK PHASE PLANNERS -->
-    
+    <!-- 
     <#list [400, 600, 1500, 2500] as acceptedCountLimit>
     <#list [0.015, 0.02, 0.025] as tabuRatio>
     <solverBenchmark>
@@ -281,7 +281,7 @@
         </solver>
     </solverBenchmark>
     </#list>
-    
+     -->
    
    
 

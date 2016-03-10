@@ -107,12 +107,11 @@ public final class PerformExperiment {
     GENDREAU(Gendreau06ObjectiveFunction.instance()) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
+        bldr
+          .addScenarios(FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
             .filter("glob:**req_rapide_**"))
-          .setScenarioReader(
-            Functions.compose(ScenarioConverter.TO_ONLINE_250,
-              Gendreau06Parser.reader()))
+          .setScenarioReader(Functions.compose(ScenarioConverter.TO_ONLINE_250,
+            Gendreau06Parser.reader()))
           // Gendreau06Parser.parser().setNumVehicles(10).asParseFunction()))
           .addResultListener(new GendreauResultWriter(experimentDir));
       }
@@ -121,9 +120,8 @@ public final class PerformExperiment {
     GENDREAU_OFFLINE(Gendreau06ObjectiveFunction.instance()) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder()
-            .add(Paths.get(GENDREAU_DATASET))
+        bldr
+          .addScenarios(FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
             .filter("glob:**req_rapide_**"))
           .setScenarioReader(Functions.compose(ScenarioConverter.TO_OFFLINE,
             Gendreau06Parser.reader()))
@@ -137,8 +135,9 @@ public final class PerformExperiment {
     VAN_LON15(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(FileProvider.builder()
-          .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
+        bldr
+          .addScenarios(FileProvider.builder()
+            .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_250))
           .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
@@ -240,76 +239,72 @@ public final class PerformExperiment {
     final List<Long> bidderMs = asList(50L, 100L, 250L);
     final List<BidFunctions> bidFunctions = asList(BidFunctions.values());
 
-    for (final long rpMs : routeplannerMs) {
-      for (final long bMs : bidderMs) {
-        for (final BidFunction bf : bidFunctions) {
-          final String rpSolverName =
-            "Tabu-search-acceptCountLim-1000-tabuRatio-0.02";
-          final String bSolverName = "First-fit-decreasing";
+    final long rpMs = 1000;
+    final long bMs = 100;
+    final BidFunction bf = BidFunctions.BALANCED_HIGH;
+    for (final String rpSolverName : optaplannerFactory.getAvailableSolvers()) {
+      // for (final long rpMs : routeplannerMs) {
+      // for (final long bMs : bidderMs) {
+      // for (final BidFunction bf : bidFunctions) {
+      // final String rpSolverName =
+      // "Tabu-search-acceptCountLim-1000-tabuRatio-0.02";
+      final String bSolverName = "First-fit-decreasing";
 
-          experimentBuilder.addConfiguration(
-            MASConfiguration.pdptwBuilder()
-              .setName("ReAuction-RP-" + rpMs + "-" + rpSolverName + "-BID-"
-                + bMs + "-" + bSolverName + "-" + bf)
-              // .addEventHandler(AddParcelEvent.class,
-              // AddParcelEvent.namedHandler())
-              .addEventHandler(AddVehicleEvent.class,
-                DefaultTruckFactory.builder()
-                  .setRoutePlanner(RtSolverRoutePlanner.supplier(
-                    optaplannerFactory.create(rpMs, rpSolverName)))
-                  .setCommunicator(RtSolverBidder.supplier(objFunc,
-                    optaplannerFactory.create(bMs, bSolverName),
-                    // cih,
-                    bf))
-                  .setLazyComputation(false)
-                  .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
-                  .build())
-              .addModel(AuctionCommModel.builder(DoubleBid.class)
-                .withStopCondition(
-                  AuctionStopConditions.and(
-                    AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
-                    AuctionStopConditions.<DoubleBid>or(
-                      AuctionStopConditions.<DoubleBid>allBidders(),
-                      AuctionStopConditions
-                        .<DoubleBid>maxAuctionDuration(5000)))))
-              .addModel(RtSolverModel.builder()
-                .withThreadPoolSize(3)
-                .withThreadGrouping(true))
-              .addModel(RealtimeClockLogger.builder())
-              .build());
-        }
-      }
+      experimentBuilder.addConfiguration(
+        MASConfiguration.pdptwBuilder()
+          .setName("ReAuction-RP-" + rpMs + "-" + rpSolverName + "-BID-"
+            + bMs + "-" + bSolverName + "-" + bf)
+          // .addEventHandler(AddParcelEvent.class,
+          // AddParcelEvent.namedHandler())
+          .addEventHandler(AddVehicleEvent.class,
+            DefaultTruckFactory.builder()
+              .setRoutePlanner(RtSolverRoutePlanner.supplier(
+                optaplannerFactory.create(rpMs, rpSolverName)))
+              .setCommunicator(RtSolverBidder.supplier(objFunc,
+                optaplannerFactory.create(bMs, bSolverName),
+                // cih,
+                bf))
+              .setLazyComputation(false)
+              .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
+              .build())
+          .addModel(AuctionCommModel.builder(DoubleBid.class)
+            .withStopCondition(
+              AuctionStopConditions.and(
+                AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+                AuctionStopConditions.<DoubleBid>or(
+                  AuctionStopConditions.<DoubleBid>allBidders(),
+                  AuctionStopConditions
+                    .<DoubleBid>maxAuctionDuration(5000)))))
+          .addModel(RtSolverModel.builder()
+            .withThreadPoolSize(3)
+            .withThreadGrouping(true))
+          .addModel(RealtimeClockLogger.builder())
+          .build());
     }
+    // }}
 
-    experimentBuilder
-      .addConfiguration(MASConfiguration.pdptwBuilder()
-        .setName("ReAuction-2optRP-cihBID")
+    experimentBuilder.addConfiguration(
+      MASConfiguration.pdptwBuilder().setName("ReAuction-2optRP-cihBID")
         // .addEventHandler(AddParcelEvent.class, AddParcelEvent.namedHandler())
         .addEventHandler(AddVehicleEvent.class,
           DefaultTruckFactory.builder()
-            .setRoutePlanner(RtSolverRoutePlanner.supplier(
-              optaplannerFactory.create(500L,
-                "Tabu-search-acceptCountLim-1000-tabuRatio-0.02")))
+            .setRoutePlanner(RtSolverRoutePlanner.supplier(optaplannerFactory
+              .create(500L, "Tabu-search-acceptCountLim-1000-tabuRatio-0.02")))
             .setCommunicator(RtSolverBidder.supplier(objFunc,
               optaplannerFactory.create(50L, "First-fit-decreasing"),
               // cih,
               RtSolverBidder.BidFunctions.PLAIN))
             .setLazyComputation(false)
-            .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
-            .build())
+            .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster()).build())
         .addModel(AuctionCommModel.builder(DoubleBid.class)
-          .withStopCondition(
-            AuctionStopConditions.and(
-              AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
-              AuctionStopConditions.<DoubleBid>or(
-                AuctionStopConditions.<DoubleBid>allBidders(),
-                AuctionStopConditions
-                  .<DoubleBid>maxAuctionDuration(5000)))))
-        .addModel(RtSolverModel.builder()
-          .withThreadPoolSize(3)
+          .withStopCondition(AuctionStopConditions.and(
+            AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+            AuctionStopConditions.<DoubleBid>or(
+              AuctionStopConditions.<DoubleBid>allBidders(),
+              AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000)))))
+        .addModel(RtSolverModel.builder().withThreadPoolSize(3)
           .withThreadGrouping(true))
-        .addModel(RealtimeClockLogger.builder())
-        .build())
+        .addModel(RealtimeClockLogger.builder()).build())
       .addConfiguration(MASConfiguration.pdptwBuilder()
         .setName("ReAuction-2optRP-cihBID-BAL-HIGH")
         .addEventHandler(AddVehicleEvent.class,
@@ -318,72 +313,54 @@ public final class PerformExperiment {
             .setCommunicator(RtSolverBidder.supplier(objFunc, cih,
               RtSolverBidder.BidFunctions.BALANCED_HIGH))
             .setLazyComputation(false)
-            .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
-            .build())
+            .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster()).build())
         .addModel(AuctionCommModel.builder(DoubleBid.class)
-          .withStopCondition(
-            AuctionStopConditions.and(
-              AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
-              AuctionStopConditions.or(
-                AuctionStopConditions.<DoubleBid>allBidders(),
-                AuctionStopConditions
-                  .<DoubleBid>maxAuctionDuration(5000)))))
-        .addModel(RtSolverModel.builder()
-          .withThreadPoolSize(3)
+          .withStopCondition(AuctionStopConditions.and(
+            AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+            AuctionStopConditions.or(
+              AuctionStopConditions.<DoubleBid>allBidders(),
+              AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000)))))
+        .addModel(RtSolverModel.builder().withThreadPoolSize(3)
           .withThreadGrouping(true))
-        .addModel(RealtimeClockLogger.builder())
-        .build())
+        .addModel(RealtimeClockLogger.builder()).build())
       .addConfiguration(MASConfiguration.pdptwBuilder()
         .setName("ReAuction-2optRP-cihBID-BAL-LOW")
-        .addEventHandler(AddVehicleEvent.class,
-          DefaultTruckFactory.builder()
-            .setRoutePlanner(RtSolverRoutePlanner.supplier(opt2))
-            .setCommunicator(RtSolverBidder.supplier(objFunc, cih,
-              RtSolverBidder.BidFunctions.BALANCED_LOW))
-            .setLazyComputation(false)
-            .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
-            .build())
+        .addEventHandler(AddVehicleEvent.class, DefaultTruckFactory.builder()
+          .setRoutePlanner(RtSolverRoutePlanner.supplier(opt2))
+          .setCommunicator(RtSolverBidder.supplier(objFunc, cih,
+            RtSolverBidder.BidFunctions.BALANCED_LOW))
+          .setLazyComputation(false)
+          .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster()).build())
         .addModel(AuctionCommModel.builder(DoubleBid.class)
-          .withStopCondition(
-            AuctionStopConditions.and(
-              AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
-              AuctionStopConditions.or(
-                AuctionStopConditions.<DoubleBid>allBidders(),
-                AuctionStopConditions
-                  .<DoubleBid>maxAuctionDuration(5000)))))
-        .addModel(RtSolverModel.builder()
-          .withThreadPoolSize(3)
+          .withStopCondition(AuctionStopConditions.and(
+            AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+            AuctionStopConditions.or(
+              AuctionStopConditions.<DoubleBid>allBidders(),
+              AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000)))))
+        .addModel(RtSolverModel.builder().withThreadPoolSize(3)
           .withThreadGrouping(true))
-        .addModel(RealtimeClockLogger.builder())
-        .build())
+        .addModel(RealtimeClockLogger.builder()).build())
 
       // cheapest insertion
-      .addConfiguration(MASConfiguration.builder(
-        RtCentral.solverConfigurationAdapt(
+      .addConfiguration(MASConfiguration
+        .builder(RtCentral.solverConfigurationAdapt(
           CheapestInsertionHeuristic.supplier(objFunc), "", true))
-        .addModel(RealtimeClockLogger.builder())
-        .build())
+        .addModel(RealtimeClockLogger.builder()).build())
 
       // 2-opt cheapest insertion
-      .addConfiguration(MASConfiguration.builder(
-        RtCentral.solverConfiguration(
-          Opt2.builder()
-            .withObjectiveFunction(objFunc)
-            .buildRealtimeSolverSupplier(),
-          ""))
-        .addModel(RealtimeClockLogger.builder())
+      .addConfiguration(MASConfiguration
+        .builder(RtCentral.solverConfiguration(Opt2.builder()
+          .withObjectiveFunction(objFunc).buildRealtimeSolverSupplier(), ""))
+        .addModel(RealtimeClockLogger.builder()).build())
+
+      .addConfiguration(MASConfiguration
+        .builder(Central
+          .solverConfiguration(CheapestInsertionHeuristic.supplier(objFunc)))
         .build())
 
-      .addConfiguration(MASConfiguration.builder(
-        Central.solverConfiguration(
-          CheapestInsertionHeuristic.supplier(objFunc)))
-        .build())
-
-      .addConfiguration(MASConfiguration.builder(
-        Central.solverConfiguration(
-          Opt2.builder()
-            .withObjectiveFunction(objFunc)
-            .buildSolverSupplier()))
+      .addConfiguration(MASConfiguration
+        .builder(Central.solverConfiguration(
+          Opt2.builder().withObjectiveFunction(objFunc).buildSolverSupplier()))
         .build());
 
     // .addConfiguration(
@@ -395,7 +372,11 @@ public final class PerformExperiment {
     // .withValidated(true)
     // .buildSolver()));
 
-    for (final String name : optaplannerFactory.getAvailableSolvers()) {
+    for (
+
+    final String name : optaplannerFactory.getAvailableSolvers())
+
+    {
       experimentBuilder.addConfiguration(
         MASConfiguration.pdptwBuilder()
           .addModel(
@@ -408,26 +389,22 @@ public final class PerformExperiment {
           .build());
     }
 
-    experimentBuilder.showGui(View.builder()
-      .withAutoPlay()
-      .withAutoClose()
-      .withSpeedUp(128)
-      // .withFullScreen()
-      .withTitleAppendix("JAAMAS 2016 Experiment")
-      .with(RoadUserRenderer.builder()
-        .withToStringLabel())
-      .with(RouteRenderer.builder())
-      .with(PDPModelRenderer.builder())
-      .with(PlaneRoadModelRenderer.builder())
-      .with(AuctionPanel.builder())
-      .with(TimeLinePanel.builder())
-      .with(RtSolverPanel.builder())
-      .withResolution(1280, 1024));
+    experimentBuilder
+      .showGui(View.builder().withAutoPlay().withAutoClose().withSpeedUp(128)
+        // .withFullScreen()
+        .withTitleAppendix("JAAMAS 2016 Experiment")
+        .with(RoadUserRenderer.builder().withToStringLabel())
+        .with(RouteRenderer.builder()).with(PDPModelRenderer.builder())
+        .with(PlaneRoadModelRenderer.builder()).with(AuctionPanel.builder())
+        .with(TimeLinePanel.builder()).with(RtSolverPanel.builder())
+        .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
       experimentBuilder.perform(System.out, expArgs);
     final long duration = System.currentTimeMillis() - time;
-    if (!results.isPresent()) {
+    if (!results.isPresent())
+
+    {
       return;
     }
 
