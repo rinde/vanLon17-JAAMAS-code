@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
-import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
@@ -372,11 +371,7 @@ public final class PerformExperiment {
     // .withValidated(true)
     // .buildSolver()));
 
-    for (
-
-    final String name : optaplannerFactory.getAvailableSolvers())
-
-    {
+    for (final String name : optaplannerFactory.getAvailableSolvers()) {
       experimentBuilder.addConfiguration(
         MASConfiguration.pdptwBuilder()
           .addModel(
@@ -394,17 +389,18 @@ public final class PerformExperiment {
         // .withFullScreen()
         .withTitleAppendix("JAAMAS 2016 Experiment")
         .with(RoadUserRenderer.builder().withToStringLabel())
-        .with(RouteRenderer.builder()).with(PDPModelRenderer.builder())
-        .with(PlaneRoadModelRenderer.builder()).with(AuctionPanel.builder())
-        .with(TimeLinePanel.builder()).with(RtSolverPanel.builder())
+        .with(RouteRenderer.builder())
+        .with(PDPModelRenderer.builder())
+        .with(PlaneRoadModelRenderer.builder())
+        // .with(AuctionPanel.builder())
+        .with(TimeLinePanel.builder())
+        .with(RtSolverPanel.builder())
         .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
       experimentBuilder.perform(System.out, expArgs);
     final long duration = System.currentTimeMillis() - time;
-    if (!results.isPresent())
-
-    {
+    if (!results.isPresent()) {
       return;
     }
 
