@@ -156,7 +156,7 @@ public final class PerformExperiment {
               .filter("glob:**0.50-20-10.00-[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_250))
-          .repeat(10)
+          .repeatSeed(10)
           .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
       }
     };

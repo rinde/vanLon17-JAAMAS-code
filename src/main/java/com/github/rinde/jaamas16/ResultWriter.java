@@ -59,7 +59,8 @@ abstract class ResultWriter implements ResultListener {
   public void startComputing(int numberOfSimulations,
       ImmutableSet<MASConfiguration> configurations,
       ImmutableSet<Scenario> scenarios,
-      int repetitions) {
+      int repetitions,
+      int seedRepetitions) {
 
     final StringBuilder sb = new StringBuilder("Experiment summary");
     sb.append(System.lineSeparator())
@@ -74,6 +75,9 @@ abstract class ResultWriter implements ResultListener {
       .append(System.lineSeparator())
       .append("Number of repetitions: ")
       .append(repetitions)
+      .append(System.lineSeparator())
+      .append("Number of seed repetitions: ")
+      .append(seedRepetitions)
       .append(System.lineSeparator())
       .append("Configurations:")
       .append(System.lineSeparator());

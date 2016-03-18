@@ -10,12 +10,16 @@ target.dir <- paste(script.dir,"/../../../files/results/BEST/GENDREAU/",sep="")
 
 # 2016-01-15T15/19/08-Optaplanner-Benchmark
 
+# arg list: [includeGendreau, dir1, dir2, ..., dirn ]
+
 
 dirs <- c(#"2016-01-15T15:19:08-Optaplanner-Benchmark-part1",
           #"2016-01-16T21:02:54-Optaplanner-Benchmark-part2")
           #"2016-01-19T17:21:46-Optaplanner-Benchmark-round2")
           #"2016-01-22T10:46:25-Optaplanner-Benchmark-cont-update-round1")
-          "2016-01-29T18:31:26-Optaplanner-benchmark-3rep")
+          #"2016-01-29T18:31:26-Optaplanner-benchmark-3rep")
+          #"2016-02-19T11:42:18-MAS")
+          "2016-03-08T11:10:25-MAS-Benchmark")
 
 files <- list()# list("2016-01-04T18:03:53-OFFLINE/Optaplanner-validated-600s.csv")
 for( dir in dirs){
@@ -84,7 +88,7 @@ selectData <- function(data,columns,alg_name,alg_dir){
 }
 
 plot <- function(data,name){
-  print("jo")
+  
   # convert data to long-format
   melted <- melt(data,id.vars=c("scenario_id","class","alg","name"),measure.vars=c("cost","travel_time","tardiness","over_time"))
   # reorder such that appearance in data frame is used as plot order
@@ -92,33 +96,24 @@ plot <- function(data,name){
   
   # convert data to wide-format, take average 
   means <- dcast(melted,class+alg+name~variable,fun=mean)
-  print(head(means))
+  
   # convert data to long format, move cost to 'wide side'
   melted_means <- melt(means,id.vars=c("class","alg", "cost", "name"),measure.vars=c("travel_time","tardiness","over_time"))
-  print(head(melted_means))
+  
   means2 <- dcast(melted_means,class+alg+cost+name~variable,sum)
-  print(head(means2))
+  
   melted_means2 <- melt(means2,id.vars=c("class","alg", "cost", "name"),measure.vars=c("travel_time","tardiness","over_time"))
-  print(head(melted_means2))
-  #print( head(melted_means2))
   #melted_means2 <- melted_means2[order(cost),]
-  print("jajaja")
-  #print(melted_means2)
   
   # to sum multiple standard deviations, we average the variances and then take the square root
   sds <- dcast(melted,scenario_id+class+alg~variable,var)
-  print("1")
   melted_sds <- melt(sds,id.vars=c("class","alg"),measure.vars=c("travel_time","tardiness","over_time"))#,measure.vars=c("travel_time_sd","tardiness_sd","over_time_sd"))
-  print("2")
   sds2 <- dcast(melted_sds,class+alg~variable,mean)
-  print("3")
+  
   melted_sds2 <- melt(sds2,id.vars=c("class","alg"),measure.vars=c("travel_time","tardiness","over_time"))#,measure.vars=c("travel_time_sd","tardiness_sd","over_time_sd"))
-  print("4")
-  print(head(melted_sds2))
   melted_means2[,"sd"] <- sqrt(melted_sds2$value)
-  print("5")
   limits <- aes(ymax = ymax, ymin=ymin)
-  print("heee")
+  
 
   # move the error bars to their respective positions. they need to be shifted because we are creating a stacked bar chart.
   melted_means2[,"ymax"] <- melted_means2$value + melted_means2$sd
@@ -134,8 +129,6 @@ plot <- function(data,name){
                     ymax = ymax + melted_means2[melted_means2$variable=="travel_time","value"] + melted_means2[melted_means2$variable=="tardiness","value"]
    )
   
-  print(head(melted_means2))
-  
   plot<-ggplot(melted_means2, aes(x=name,y=value,fill=variable)) + 
     geom_bar(stat='identity') + 
     geom_errorbar(stat='identity',limits) +
@@ -143,7 +136,7 @@ plot <- function(data,name){
     theme(legend.position="top") +
     scale_fill_brewer(palette="Set2") +
     theme(axis.text.x=element_text(angle = -90, hjust = 0, vjust=.5))
-  ggsave(file=paste(name,".pdf",sep=""))
+  ggsave(file=paste("plots/",name,".pdf",sep=""))
   return(plot)
 }
 
@@ -228,7 +221,7 @@ alldata$name <- paste( sprintf("%03d",alldata$rank),alldata$alg,sep="-")
 
 
 
-alldata <- subset(alldata, rank < 6 | rank == 36 | alg =="gendreau")
+#alldata <- subset(alldata, rank < 6 | rank == 36 | alg =="gendreau")
 
 
 
