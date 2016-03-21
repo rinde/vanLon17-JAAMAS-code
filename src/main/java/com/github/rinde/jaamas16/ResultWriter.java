@@ -154,6 +154,7 @@ abstract class ResultWriter implements ResultListener {
           sr.getSimArgs().getScenario().getProblemInstanceId(),
           sr.getSimArgs().getMasConfig().getName(),
           sr.getSimArgs().getRandomSeed(),
+          sr.getSimArgs().getRepetition(),
           tickInfoListSize,
           tickInfoListSize == 0 ? 0
             : sumIatNs / tickInfoListSize,
@@ -172,6 +173,7 @@ abstract class ResultWriter implements ResultListener {
         "instance",
         "config",
         "random-seed",
+        "repetition",
         "rt-tick-infos",
         "avg-interarrival-time",
         "rt-count",
@@ -248,7 +250,8 @@ abstract class ResultWriter implements ResultListener {
       simArgs.getMasConfig().getName(),
       scenario.getProblemClass().getId(),
       scenario.getProblemInstanceId(),
-      simArgs.getRandomSeed());
+      simArgs.getRandomSeed(),
+      simArgs.getRepetition());
 
     final File iatFile = new File(experimentDir, id + "-interarrivaltimes.csv");
     final ExperimentInfo info = (ExperimentInfo) sr.getResultObject();
@@ -303,6 +306,8 @@ abstract class ResultWriter implements ResultListener {
     SCENARIO_ID,
 
     RANDOM_SEED,
+
+    REPETITION,
 
     COMP_TIME,
 

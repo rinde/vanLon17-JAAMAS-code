@@ -74,7 +74,8 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
           .put(OutputFields.SCALE, properties.get("scale"))
           .put(OutputFields.NUM_ORDERS, properties.get("AddParcelEvent"))
           .put(OutputFields.NUM_VEHICLES, properties.get("AddVehicleEvent"))
-          .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed());
+          .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed())
+          .put(OutputFields.REPETITION, sr.getSimArgs().getRepetition());
 
       addSimOutputs(map, sr);
 

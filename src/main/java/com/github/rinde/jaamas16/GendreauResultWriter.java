@@ -101,6 +101,7 @@ public class GendreauResultWriter extends ResultWriter {
           .put(OutputFields.NUM_ORDERS, props.get(Property.NUM_ORDERS))
           .put(OutputFields.NUM_VEHICLES, numVehicles)
           .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed())
+          .put(OutputFields.REPETITION, sr.getSimArgs().getRepetition())
           .put(Property.GENDR_ALG, props.get(Property.GENDR_ALG))
           .put(Property.GENDR_COST, props.get(Property.GENDR_COST))
           .put(Property.GENDR_TT, props.get(Property.GENDR_TT))
