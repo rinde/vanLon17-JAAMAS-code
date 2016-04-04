@@ -46,7 +46,6 @@ import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.central.rt.RtSolverModel;
-import com.github.rinde.rinsim.central.rt.RtSolverPanel;
 import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
@@ -109,9 +108,21 @@ public final class PerformExperiment {
         bldr
           .addScenarios(FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
             .filter("glob:**req_rapide_**"))
-          .setScenarioReader(Functions.compose(ScenarioConverter.TO_ONLINE_250,
-            Gendreau06Parser.reader()))
-          // Gendreau06Parser.parser().setNumVehicles(10).asParseFunction()))
+          .setScenarioReader(
+            Functions.compose(ScenarioConverter.TO_ONLINE_REALTIME_250,
+              Gendreau06Parser.reader()))
+          .addResultListener(new GendreauResultWriter(experimentDir));
+      }
+    },
+
+    GENDREAU_SIMULATED(Gendreau06ObjectiveFunction.instance()) {
+      @Override
+      void apply(Builder b) {
+        b.addScenarios(FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
+          .filter("glob:**req_rapide_**"))
+          .setScenarioReader(
+            Functions.compose(ScenarioConverter.TO_ONLINE_SIMULATED_250,
+              Gendreau06Parser.reader()))
           .addResultListener(new GendreauResultWriter(experimentDir));
       }
     },
@@ -138,7 +149,7 @@ public final class PerformExperiment {
           .addScenarios(FileProvider.builder()
             .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
           .setScenarioReader(
-            ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_250))
+            ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_REALTIME_250))
           .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
       }
     },
@@ -155,7 +166,7 @@ public final class PerformExperiment {
             FileProvider.builder().add(Paths.get(VANLON_HOLVOET_DATASET))
               .filter("glob:**0.50-20-10.00-[0-9].scen"))
           .setScenarioReader(
-            ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_250))
+            ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_REALTIME_250))
           .repeatSeed(10)
           .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
       }
@@ -258,9 +269,9 @@ public final class PerformExperiment {
           .addEventHandler(AddVehicleEvent.class,
             DefaultTruckFactory.builder()
               .setRoutePlanner(RtSolverRoutePlanner.supplier(
-                optaplannerFactory.create(rpMs, rpSolverName)))
+                optaplannerFactory.createRT(rpMs, rpSolverName)))
               .setCommunicator(RtSolverBidder.supplier(objFunc,
-                optaplannerFactory.create(bMs, bSolverName),
+                optaplannerFactory.createRT(bMs, bSolverName),
                 // cih,
                 bf))
               .setLazyComputation(false)
@@ -288,9 +299,10 @@ public final class PerformExperiment {
         .addEventHandler(AddVehicleEvent.class,
           DefaultTruckFactory.builder()
             .setRoutePlanner(RtSolverRoutePlanner.supplier(optaplannerFactory
-              .create(500L, "Tabu-search-acceptCountLim-1000-tabuRatio-0.02")))
+              .createRT(500L,
+                "Tabu-search-acceptCountLim-1000-tabuRatio-0.02")))
             .setCommunicator(RtSolverBidder.supplier(objFunc,
-              optaplannerFactory.create(50L, "First-fit-decreasing"),
+              optaplannerFactory.createRT(50L, "First-fit-decreasing"),
               // cih,
               RtSolverBidder.BidFunctions.PLAIN))
             .setLazyComputation(false)
@@ -375,7 +387,7 @@ public final class PerformExperiment {
       experimentBuilder.addConfiguration(
         MASConfiguration.pdptwBuilder()
           .addModel(
-            RtCentral.builder(optaplannerFactory.create(10000L, name))
+            RtCentral.builder(optaplannerFactory.createRT(10000L, name))
               .withContinuousUpdates(true)
               .withThreadGrouping(true))
           .addModel(RealtimeClockLogger.builder())
@@ -383,6 +395,28 @@ public final class PerformExperiment {
           .setName(name)
           .build());
     }
+
+    // 5 minutes
+    final String offlineSolverName =
+      "Tabu-search-acceptCountLim-500-tabuRatio-0.02";
+    experimentBuilder.addConfiguration(
+      MASConfiguration.pdptwBuilder()
+        .addModel(Central.builder(
+          optaplannerFactory.create(300000L, offlineSolverName)))
+        .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
+        .setName("offline-" + offlineSolverName)
+        .build());
+
+    // 1 minute
+    final String simulatedTimeSolverName =
+      "Tabu-search-acceptCountLim-500-tabuRatio-0.02";
+    experimentBuilder.addConfiguration(
+      MASConfiguration.pdptwBuilder()
+        .addModel(Central.builder(
+          optaplannerFactory.create(60000L, simulatedTimeSolverName)))
+        .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
+        .setName("simulated-time-" + simulatedTimeSolverName)
+        .build());
 
     experimentBuilder
       .showGui(View.builder().withAutoPlay().withAutoClose().withSpeedUp(128)
@@ -394,7 +428,7 @@ public final class PerformExperiment {
         .with(PlaneRoadModelRenderer.builder())
         // .with(AuctionPanel.builder())
         .with(TimeLinePanel.builder())
-        .with(RtSolverPanel.builder())
+        // .with(RtSolverPanel.builder())
         .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
@@ -414,13 +448,25 @@ public final class PerformExperiment {
      * Changes ticksize to 250ms and adds stopcondition with maximum sim time of
      * 10 hours.
      */
-    TO_ONLINE_250 {
+    TO_ONLINE_REALTIME_250 {
       @Override
       public Scenario apply(@Nullable Scenario input) {
         final Scenario s = verifyNotNull(input);
         return Scenario.builder(s)
           .removeModelsOfType(TimeModel.AbstractBuilder.class)
           .addModel(TimeModel.builder().withTickLength(250).withRealTime())
+          .setStopCondition(StopConditions.or(s.getStopCondition(),
+            StopConditions.limitedTime(10 * 60 * 60 * 1000)))
+          .build();
+      }
+    },
+    TO_ONLINE_SIMULATED_250 {
+      @Override
+      public Scenario apply(@Nullable Scenario input) {
+        final Scenario s = verifyNotNull(input);
+        return Scenario.builder(s)
+          .removeModelsOfType(TimeModel.AbstractBuilder.class)
+          .addModel(TimeModel.builder().withTickLength(250))
           .setStopCondition(StopConditions.or(s.getStopCondition(),
             StopConditions.limitedTime(10 * 60 * 60 * 1000)))
           .build();
