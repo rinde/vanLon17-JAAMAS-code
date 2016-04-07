@@ -154,6 +154,30 @@ public final class PerformExperiment {
       }
     },
 
+    VAN_LON15_OFFLINE(Gendreau06ObjectiveFunction.instance(50d)) {
+      @Override
+      void apply(Builder bldr) {
+        bldr
+          .addScenarios(FileProvider.builder()
+            .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
+          .setScenarioReader(
+            ScenarioIO.readerAdapter(ScenarioConverter.TO_OFFLINE))
+          .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
+      }
+    },
+
+    VAN_LON15_SIMULATED(Gendreau06ObjectiveFunction.instance(50d)) {
+      @Override
+      void apply(Builder bldr) {
+        bldr
+          .addScenarios(FileProvider.builder()
+            .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
+          .setScenarioReader(
+            ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_SIMULATED_250))
+          .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
+      }
+    },
+
     /**
      * Investigate one setting of the Van Lon & Holvoet (2015) dataset with many
      * repetitions.
