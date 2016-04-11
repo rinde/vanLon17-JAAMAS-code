@@ -307,8 +307,8 @@ public final class PerformExperiment {
                 AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
                 AuctionStopConditions.<DoubleBid>or(
                   AuctionStopConditions.<DoubleBid>allBidders(),
-                  AuctionStopConditions
-                    .<DoubleBid>maxAuctionDuration(5000)))))
+                  AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
+            .withMaxAuctionDuration(30 * 60 * 1000L))
           .addModel(RtSolverModel.builder()
             .withThreadPoolSize(3)
             .withThreadGrouping(true))
@@ -336,7 +336,9 @@ public final class PerformExperiment {
             AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
             AuctionStopConditions.<DoubleBid>or(
               AuctionStopConditions.<DoubleBid>allBidders(),
-              AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000)))))
+              AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
+          .withMaxAuctionDuration(30 * 60 * 1000L))
+
         .addModel(RtSolverModel.builder().withThreadPoolSize(3)
           .withThreadGrouping(true))
         .addModel(RealtimeClockLogger.builder()).build())
@@ -354,7 +356,8 @@ public final class PerformExperiment {
             AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
             AuctionStopConditions.or(
               AuctionStopConditions.<DoubleBid>allBidders(),
-              AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000)))))
+              AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
+          .withMaxAuctionDuration(30 * 60 * 1000L))
         .addModel(RtSolverModel.builder().withThreadPoolSize(3)
           .withThreadGrouping(true))
         .addModel(RealtimeClockLogger.builder()).build())
@@ -371,7 +374,8 @@ public final class PerformExperiment {
             AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
             AuctionStopConditions.or(
               AuctionStopConditions.<DoubleBid>allBidders(),
-              AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000)))))
+              AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
+          .withMaxAuctionDuration(30 * 60 * 1000L))
         .addModel(RtSolverModel.builder().withThreadPoolSize(3)
           .withThreadGrouping(true))
         .addModel(RealtimeClockLogger.builder()).build())
