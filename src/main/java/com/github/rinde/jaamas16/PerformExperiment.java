@@ -46,6 +46,7 @@ import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.central.rt.RtSolverModel;
+import com.github.rinde.rinsim.central.rt.RtSolverPanel;
 import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
@@ -65,6 +66,7 @@ import com.github.rinde.rinsim.io.FileProvider;
 import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
+import com.github.rinde.rinsim.pdptw.common.RoutePanel;
 import com.github.rinde.rinsim.pdptw.common.RouteRenderer;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
 import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
@@ -415,7 +417,7 @@ public final class PerformExperiment {
       experimentBuilder.addConfiguration(
         MASConfiguration.pdptwBuilder()
           .addModel(
-            RtCentral.builder(optaplannerFactory.createRT(10000L, name))
+            RtCentral.builder(optaplannerFactory.createRT(60000L, name))
               .withContinuousUpdates(true)
               .withThreadGrouping(true))
           .addModel(RealtimeClockLogger.builder())
@@ -455,8 +457,9 @@ public final class PerformExperiment {
         .with(PDPModelRenderer.builder())
         .with(PlaneRoadModelRenderer.builder())
         // .with(AuctionPanel.builder())
+        .with(RoutePanel.builder())
         .with(TimeLinePanel.builder())
-        // .with(RtSolverPanel.builder())
+        .with(RtSolverPanel.builder())
         .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
