@@ -417,7 +417,7 @@ public final class PerformExperiment {
       experimentBuilder.addConfiguration(
         MASConfiguration.pdptwBuilder()
           .addModel(
-            RtCentral.builder(optaplannerFactory.createRT(60000L, name))
+            RtCentral.builder(optaplannerFactory.createRT(10000L, name))
               .withContinuousUpdates(true)
               .withThreadGrouping(true))
           .addModel(RealtimeClockLogger.builder())
