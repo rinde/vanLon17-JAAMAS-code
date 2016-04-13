@@ -46,7 +46,6 @@ import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.central.rt.RtSolverModel;
-import com.github.rinde.rinsim.central.rt.RtSolverPanel;
 import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
@@ -426,26 +425,14 @@ public final class PerformExperiment {
           .build());
     }
 
-    // 5 minutes
-    final String offlineSolverName =
-      "Tabu-search-acceptCountLim-500-tabuRatio-0.02";
+    final String simTimeSolverName =
+      "Simulated-annealing-1";
     experimentBuilder.addConfiguration(
       MASConfiguration.pdptwBuilder()
         .addModel(Central.builder(
-          optaplannerFactory.create(300000L, offlineSolverName)))
+          optaplannerFactory.create(10000L, simTimeSolverName)))
         .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-        .setName("offline-" + offlineSolverName)
-        .build());
-
-    // 1 minute
-    final String simulatedTimeSolverName =
-      "Tabu-search-acceptCountLim-500-tabuRatio-0.02";
-    experimentBuilder.addConfiguration(
-      MASConfiguration.pdptwBuilder()
-        .addModel(Central.builder(
-          optaplannerFactory.create(60000L, simulatedTimeSolverName)))
-        .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-        .setName("simulated-time-" + simulatedTimeSolverName)
+        .setName("simtime-" + simTimeSolverName)
         .build());
 
     experimentBuilder
@@ -459,7 +446,7 @@ public final class PerformExperiment {
         // .with(AuctionPanel.builder())
         .with(RoutePanel.builder())
         .with(TimeLinePanel.builder())
-        .with(RtSolverPanel.builder())
+        // .with(RtSolverPanel.builder())
         .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =
