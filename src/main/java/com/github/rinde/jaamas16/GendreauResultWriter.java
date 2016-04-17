@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.github.rinde.jaamas16.MeasureGendreau.Property;
 import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
+import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -37,8 +38,9 @@ public class GendreauResultWriter extends ResultWriter {
 
   ImmutableMap<String, ImmutableMap<Property, String>> properties;
 
-  public GendreauResultWriter(File target) {
-    super(target);
+  public GendreauResultWriter(File target,
+      Gendreau06ObjectiveFunction objFunc) {
+    super(target, objFunc);
 
     try {
       final ImmutableMap.Builder<String, ImmutableMap<Property, String>> mapBuilder =
@@ -108,7 +110,7 @@ public class GendreauResultWriter extends ResultWriter {
           .put(Property.GENDR_TARD, props.get(Property.GENDR_TARD))
           .put(Property.GENDR_OT, props.get(Property.GENDR_OT));
 
-      addSimOutputs(map, sr);
+      addSimOutputs(map, sr, objectiveFunction);
 
       final String line = MeasureGendreau
         .appendValuesTo(new StringBuilder(), map.build(), getFields())

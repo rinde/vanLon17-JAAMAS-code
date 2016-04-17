@@ -47,10 +47,11 @@ import com.google.common.io.Files;
 abstract class ResultWriter implements ResultListener {
   final File experimentDirectory;
   final File timeDeviationsDirectory;
+  final Gendreau06ObjectiveFunction objectiveFunction;
 
-  ResultWriter(File target) {
+  ResultWriter(File target, Gendreau06ObjectiveFunction objFunc) {
     experimentDirectory = createExperimentDir(target);
-
+    objectiveFunction = objFunc;
     timeDeviationsDirectory = new File(experimentDirectory, "time-deviations");
     timeDeviationsDirectory.mkdirs();
   }
@@ -184,7 +185,7 @@ abstract class ResultWriter implements ResultListener {
   }
 
   static void addSimOutputs(ImmutableMap.Builder<Enum<?>, Object> map,
-      SimulationResult sr) {
+      SimulationResult sr, Gendreau06ObjectiveFunction objFunc) {
     if (sr.getResultObject() instanceof FailureStrategy) {
       map.put(OutputFields.COST, -1)
         .put(OutputFields.TRAVEL_TIME, -1)
@@ -198,8 +199,6 @@ abstract class ResultWriter implements ResultListener {
     } else {
       final ExperimentInfo ei = (ExperimentInfo) sr.getResultObject();
       final StatisticsDTO stats = ei.getStats();
-      final Gendreau06ObjectiveFunction objFunc =
-        (Gendreau06ObjectiveFunction) sr.getSimArgs().getObjectiveFunction();
       map.put(OutputFields.COST, objFunc.computeCost(stats))
         .put(OutputFields.TRAVEL_TIME, objFunc.travelTime(stats))
         .put(OutputFields.TARDINESS, objFunc.tardiness(stats))

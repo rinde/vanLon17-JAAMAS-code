@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
+import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -34,8 +35,9 @@ import com.google.common.io.Files;
  */
 public class VanLonHolvoetResultWriter extends ResultWriter {
 
-  public VanLonHolvoetResultWriter(File target) {
-    super(target);
+  public VanLonHolvoetResultWriter(File target,
+      Gendreau06ObjectiveFunction objFunc) {
+    super(target, objFunc);
   }
 
   @Override
@@ -77,7 +79,7 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
           .put(OutputFields.RANDOM_SEED, sr.getSimArgs().getRandomSeed())
           .put(OutputFields.REPETITION, sr.getSimArgs().getRepetition());
 
-      addSimOutputs(map, sr);
+      addSimOutputs(map, sr, objectiveFunction);
 
       final String line = MeasureGendreau
         .appendValuesTo(new StringBuilder(), map.build(), getFields())

@@ -64,6 +64,7 @@ import com.github.rinde.rinsim.experiment.PostProcessors;
 import com.github.rinde.rinsim.io.FileProvider;
 import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
+import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
 import com.github.rinde.rinsim.pdptw.common.RoutePanel;
 import com.github.rinde.rinsim.pdptw.common.RouteRenderer;
@@ -112,7 +113,8 @@ public final class PerformExperiment {
           .setScenarioReader(
             Functions.compose(ScenarioConverter.TO_ONLINE_REALTIME_250,
               Gendreau06Parser.reader()))
-          .addResultListener(new GendreauResultWriter(experimentDir));
+          .addResultListener(
+            new GendreauResultWriter(experimentDir, getObjectiveFunction()));
       }
     },
 
@@ -124,7 +126,8 @@ public final class PerformExperiment {
           .setScenarioReader(
             Functions.compose(ScenarioConverter.TO_ONLINE_SIMULATED_250,
               Gendreau06Parser.reader()))
-          .addResultListener(new GendreauResultWriter(experimentDir));
+          .addResultListener(
+            new GendreauResultWriter(experimentDir, getObjectiveFunction()));
       }
     },
 
@@ -136,7 +139,8 @@ public final class PerformExperiment {
             .filter("glob:**req_rapide_**"))
           .setScenarioReader(Functions.compose(ScenarioConverter.TO_OFFLINE,
             Gendreau06Parser.reader()))
-          .addResultListener(new GendreauResultWriter(experimentDir));
+          .addResultListener(
+            new GendreauResultWriter(experimentDir, getObjectiveFunction()));
       }
     },
 
@@ -151,7 +155,8 @@ public final class PerformExperiment {
             .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_REALTIME_250))
-          .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
+          .addResultListener(new VanLonHolvoetResultWriter(experimentDir,
+            getObjectiveFunction()));
       }
     },
 
@@ -163,7 +168,8 @@ public final class PerformExperiment {
             .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_OFFLINE))
-          .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
+          .addResultListener(new VanLonHolvoetResultWriter(experimentDir,
+            getObjectiveFunction()));
       }
     },
 
@@ -175,7 +181,8 @@ public final class PerformExperiment {
             .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_SIMULATED_250))
-          .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
+          .addResultListener(new VanLonHolvoetResultWriter(experimentDir,
+            getObjectiveFunction()));
       }
     },
 
@@ -193,7 +200,8 @@ public final class PerformExperiment {
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_REALTIME_250))
           .repeatSeed(10)
-          .addResultListener(new VanLonHolvoetResultWriter(experimentDir));
+          .addResultListener(new VanLonHolvoetResultWriter(experimentDir,
+            getObjectiveFunction()));
       }
     };
 
@@ -259,14 +267,14 @@ public final class PerformExperiment {
       .getFactoryFromBenchmark("com/github/rinde/jaamas16/benchmarkConfig.xml");
 
     final long time = System.currentTimeMillis();
-    final Experiment.Builder experimentBuilder = Experiment.build(objFunc)
+    final Experiment.Builder experimentBuilder = Experiment.builder()
       .computeLocal()
       .withRandomSeed(123)
       .withThreads(11)
       .repeat(1)
       .withWarmup(30000)
       .addResultListener(new CommandLineProgress(System.out))
-      .usePostProcessor(LogProcessor.INSTANCE);
+      .usePostProcessor(new LogProcessor(objFunc));
 
     experimentType.apply(experimentBuilder);
 
@@ -553,56 +561,61 @@ public final class PerformExperiment {
     }
   }
 
-  enum LogProcessor implements PostProcessor<ExperimentInfo> {
-    INSTANCE {
-      @Override
-      public ExperimentInfo collectResults(Simulator sim, SimArgs args) {
+  static class LogProcessor implements PostProcessor<ExperimentInfo> {
+    ObjectiveFunction objectiveFunction;
 
-        @Nullable
-        final RealtimeClockLogger logger =
-          sim.getModelProvider().tryGetModel(RealtimeClockLogger.class);
+    LogProcessor(ObjectiveFunction objFunc) {
+      objectiveFunction = objFunc;
+    }
 
-        @Nullable
-        final AuctionCommModel<?> auctionModel =
-          sim.getModelProvider().tryGetModel(AuctionCommModel.class);
+    @Override
+    public ExperimentInfo collectResults(Simulator sim, SimArgs args) {
 
-        final Optional<AuctionStats> aStats;
-        if (auctionModel == null) {
-          aStats = Optional.absent();
-        } else {
-          final int parcels = auctionModel.getNumParcels();
-          final int reauctions = auctionModel.getNumAuctions() - parcels;
-          final int unsuccessful = auctionModel.getNumUnsuccesfulAuctions();
-          final int failed = auctionModel.getNumFailedAuctions();
-          aStats = Optional
-            .of(AuctionStats.create(parcels, reauctions, unsuccessful, failed));
-        }
+      @Nullable
+      final RealtimeClockLogger logger =
+        sim.getModelProvider().tryGetModel(RealtimeClockLogger.class);
 
-        final StatisticsDTO stats =
-          PostProcessors.statisticsPostProcessor().collectResults(sim, args);
+      @Nullable
+      final AuctionCommModel<?> auctionModel =
+        sim.getModelProvider().tryGetModel(AuctionCommModel.class);
 
-        LOGGER.info("success: {}", args);
-
-        if (logger == null) {
-          return ExperimentInfo.create(new ArrayList<LogEntry>(), 0,
-            sim.getCurrentTime() / sim.getTimeStep(), stats,
-            ImmutableList.<RealtimeTickInfo>of(), aStats);
-        }
-        return ExperimentInfo.create(logger.getLog(), logger.getRtCount(),
-          logger.getStCount(), stats, logger.getTickInfoList(), aStats);
+      final Optional<AuctionStats> aStats;
+      if (auctionModel == null) {
+        aStats = Optional.absent();
+      } else {
+        final int parcels = auctionModel.getNumParcels();
+        final int reauctions = auctionModel.getNumAuctions() - parcels;
+        final int unsuccessful = auctionModel.getNumUnsuccesfulAuctions();
+        final int failed = auctionModel.getNumFailedAuctions();
+        aStats = Optional
+          .of(AuctionStats.create(parcels, reauctions, unsuccessful, failed));
       }
 
-      @Override
-      public FailureStrategy handleFailure(Exception e, Simulator sim,
-          SimArgs args) {
+      final StatisticsDTO stats =
+        PostProcessors.statisticsPostProcessor(objectiveFunction)
+          .collectResults(sim, args);
 
-        System.out.println("Fail: " + args);
-        e.printStackTrace();
-        System.out.println(AffinityLock.dumpLocks());
+      LOGGER.info("success: {}", args);
 
-        return FailureStrategy.RETRY;
-        // return FailureStrategy.ABORT_EXPERIMENT_RUN;
+      if (logger == null) {
+        return ExperimentInfo.create(new ArrayList<LogEntry>(), 0,
+          sim.getCurrentTime() / sim.getTimeStep(), stats,
+          ImmutableList.<RealtimeTickInfo>of(), aStats);
       }
+      return ExperimentInfo.create(logger.getLog(), logger.getRtCount(),
+        logger.getStCount(), stats, logger.getTickInfoList(), aStats);
+    }
+
+    @Override
+    public FailureStrategy handleFailure(Exception e, Simulator sim,
+        SimArgs args) {
+
+      System.out.println("Fail: " + args);
+      e.printStackTrace();
+      System.out.println(AffinityLock.dumpLocks());
+
+      return FailureStrategy.RETRY;
+      // return FailureStrategy.ABORT_EXPERIMENT_RUN;
 
     }
   }
