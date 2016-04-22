@@ -21,6 +21,7 @@ import static java.util.Arrays.asList;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -443,6 +444,15 @@ public final class PerformExperiment {
         .setName("simtime-" + simTimeSolverName)
         .build());
 
+    final int maxStepCount = 500;
+    experimentBuilder.addConfiguration(
+      MASConfiguration.pdptwBuilder()
+        .addModel(Central.builder(optaplannerFactory.createWithMaxCount(
+          maxStepCount, simTimeSolverName)))
+        .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
+        .setName("simtime-stepcount-" + maxStepCount + "-" + simTimeSolverName)
+        .build());
+
     experimentBuilder
       .showGui(View.builder().withAutoPlay().withAutoClose().withSpeedUp(128)
         // .withFullScreen()
@@ -561,7 +571,9 @@ public final class PerformExperiment {
     }
   }
 
-  static class LogProcessor implements PostProcessor<ExperimentInfo> {
+  static class LogProcessor
+      implements PostProcessor<ExperimentInfo>, Serializable {
+    private static final long serialVersionUID = 5997690791395717045L;
     ObjectiveFunction objectiveFunction;
 
     LogProcessor(ObjectiveFunction objFunc) {
