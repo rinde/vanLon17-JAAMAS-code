@@ -42,7 +42,6 @@ import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
 import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolvers;
-import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolvers.OptaplannerFactory;
 import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
@@ -88,8 +87,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-
-import net.openhft.affinity.AffinityLock;
 
 /**
  *
@@ -264,8 +261,10 @@ public final class PerformExperiment {
       .withObjectiveFunction(objFunc)
       .buildRealtimeSolverSupplier();
 
-    final OptaplannerFactory optaplannerFactory = OptaplannerSolvers
-      .getFactoryFromBenchmark("com/github/rinde/jaamas16/benchmarkConfig.xml");
+    final OptaplannerSolvers.Builder optaplannerFactory =
+      OptaplannerSolvers.builder().withSolverFromBenchmark(
+        "com/github/rinde/jaamas16/benchmarkConfig.xml")
+        .withObjectiveFunction(objFunc);
 
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment.builder()
@@ -286,7 +285,8 @@ public final class PerformExperiment {
     final long rpMs = 1000;
     final long bMs = 100;
     final BidFunction bf = BidFunctions.BALANCED_HIGH;
-    for (final String rpSolverName : optaplannerFactory.getAvailableSolvers()) {
+    for (final String rpSolverName : optaplannerFactory
+      .getSupportedSolverKeys()) {
       // for (final long rpMs : routeplannerMs) {
       // for (final long bMs : bidderMs) {
       // for (final BidFunction bf : bidFunctions) {
@@ -303,9 +303,16 @@ public final class PerformExperiment {
           .addEventHandler(AddVehicleEvent.class,
             DefaultTruckFactory.builder()
               .setRoutePlanner(RtSolverRoutePlanner.supplier(
-                optaplannerFactory.createRT(rpMs, rpSolverName)))
+                optaplannerFactory.withSolverKey(rpSolverName)
+                  .withUnimprovedMsLimit(rpMs)
+                  .buildRealtimeSolverSupplier()))
+
+              // optaplannerFactory.createRT(rpMs, rpSolverName)))
               .setCommunicator(RtSolverBidder.supplier(objFunc,
-                optaplannerFactory.createRT(bMs, bSolverName),
+                optaplannerFactory.withSolverKey(bSolverName)
+                  .withUnimprovedMsLimit(bMs)
+                  .buildRealtimeSolverSupplier(),
+                // optaplannerFactory.createRT(bMs, bSolverName),
                 // cih,
                 bf))
               .setLazyComputation(false)
@@ -332,11 +339,20 @@ public final class PerformExperiment {
         // .addEventHandler(AddParcelEvent.class, AddParcelEvent.namedHandler())
         .addEventHandler(AddVehicleEvent.class,
           DefaultTruckFactory.builder()
-            .setRoutePlanner(RtSolverRoutePlanner.supplier(optaplannerFactory
-              .createRT(500L,
-                "Tabu-search-acceptCountLim-1000-tabuRatio-0.02")))
+            .setRoutePlanner(RtSolverRoutePlanner.supplier(
+              optaplannerFactory.withUnimprovedMsLimit(500L)
+                .withSolverKey("Tabu-search-acceptCountLim-1000-tabuRatio-0.02")
+                .buildRealtimeSolverSupplier()))
+
+            // optaplannerFactory
+            // .createRT(500L,
+            // "Tabu-search-acceptCountLim-1000-tabuRatio-0.02")))
             .setCommunicator(RtSolverBidder.supplier(objFunc,
-              optaplannerFactory.createRT(50L, "First-fit-decreasing"),
+              optaplannerFactory.withUnimprovedMsLimit(50L)
+                .withSolverKey("First-fit-decreasing")
+                .buildRealtimeSolverSupplier(),
+
+              // optaplannerFactory.createRT(50L, "First-fit-decreasing"),
               // cih,
               RtSolverBidder.BidFunctions.PLAIN))
             .setLazyComputation(false)
@@ -421,11 +437,15 @@ public final class PerformExperiment {
     // .withValidated(true)
     // .buildSolver()));
 
-    for (final String name : optaplannerFactory.getAvailableSolvers()) {
+    final long centralUnimprovedMs = 10000L;
+    for (final String name : optaplannerFactory.getSupportedSolverKeys()) {
       experimentBuilder.addConfiguration(
         MASConfiguration.pdptwBuilder()
           .addModel(
-            RtCentral.builder(optaplannerFactory.createRT(10000L, name))
+            RtCentral.builder(
+              optaplannerFactory.withSolverKey(name)
+                .withUnimprovedMsLimit(centralUnimprovedMs)
+                .buildRealtimeSolverSupplier())
               .withContinuousUpdates(true)
               .withThreadGrouping(true))
           .addModel(RealtimeClockLogger.builder())
@@ -439,22 +459,30 @@ public final class PerformExperiment {
     experimentBuilder.addConfiguration(
       MASConfiguration.pdptwBuilder()
         .addModel(Central.builder(
-          optaplannerFactory.create(10000L, simTimeSolverName)))
+          optaplannerFactory.withUnimprovedMsLimit(10000L)
+            .withSolverKey(simTimeSolverName)
+            .buildSolverSupplier()))
+        // optaplannerFactory.create(10000L, simTimeSolverName)))
         .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
         .setName("simtime-" + simTimeSolverName)
         .build());
 
-    final int maxStepCount = 500;
+    final int maxStepCount = 1000;
     experimentBuilder.addConfiguration(
       MASConfiguration.pdptwBuilder()
-        .addModel(Central.builder(optaplannerFactory.createWithMaxCount(
-          maxStepCount, simTimeSolverName)))
+        .addModel(Central.builder(
+          optaplannerFactory.withSolverKey(simTimeSolverName)
+            .withUnimprovedStepCountLimit(maxStepCount)
+            .buildSolverSupplier()))
         .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
         .setName("simtime-stepcount-" + maxStepCount + "-" + simTimeSolverName)
         .build());
 
     experimentBuilder
-      .showGui(View.builder().withAutoPlay().withAutoClose().withSpeedUp(128)
+      .showGui(View.builder()
+        .withAutoPlay()
+        .withAutoClose()
+        .withSpeedUp(128)
         // .withFullScreen()
         .withTitleAppendix("JAAMAS 2016 Experiment")
         .with(RoadUserRenderer.builder().withToStringLabel())
@@ -550,7 +578,9 @@ public final class PerformExperiment {
   }
 
   @AutoValue
-  abstract static class ExperimentInfo {
+  abstract static class ExperimentInfo implements Serializable {
+    private static final long serialVersionUID = 6324066851233398736L;
+
     abstract List<LogEntry> getLog();
 
     abstract long getRtCount();
@@ -624,7 +654,7 @@ public final class PerformExperiment {
 
       System.out.println("Fail: " + args);
       e.printStackTrace();
-      System.out.println(AffinityLock.dumpLocks());
+      // System.out.println(AffinityLock.dumpLocks());
 
       return FailureStrategy.RETRY;
       // return FailureStrategy.ABORT_EXPERIMENT_RUN;

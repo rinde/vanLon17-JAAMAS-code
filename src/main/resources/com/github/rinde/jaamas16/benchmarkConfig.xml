@@ -7,12 +7,12 @@
 	<inheritedSolverBenchmark>
 		<problemBenchmarks>
 			<solutionFileIOClass>com.github.rinde.jaamas16.OptaplannerGendreauIO</solutionFileIOClass>
-			<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_24</inputSolutionFile>
-			 <inputSolutionFile>files/gendreau2006/requests/req_rapide_2_240_24</inputSolutionFile> 
+			 <inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_24</inputSolutionFile>
+			<!-- <inputSolutionFile>files/gendreau2006/requests/req_rapide_2_240_24</inputSolutionFile> 
 			 <inputSolutionFile>files/gendreau2006/requests/req_rapide_3_240_24</inputSolutionFile> 
 		      <inputSolutionFile>files/gendreau2006/requests/req_rapide_4_240_24</inputSolutionFile>
 		      <inputSolutionFile>files/gendreau2006/requests/req_rapide_5_240_24</inputSolutionFile> 
-				
+				 -->
 			<!--	<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_33</inputSolutionFile> 
 				<inputSolutionFile>files/gendreau2006/requests/req_rapide_2_240_33</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_3_240_33</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_4_240_33</inputSolutionFile> 
 				<inputSolutionFile>files/gendreau2006/requests/req_rapide_5_240_33</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_1_450_24</inputSolutionFile> <inputSolutionFile>files/gendreau2006/requests/req_rapide_2_450_24</inputSolutionFile> 
