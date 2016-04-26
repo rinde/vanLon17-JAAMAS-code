@@ -467,7 +467,7 @@ public final class PerformExperiment {
         .setName("simtime-" + simTimeSolverName)
         .build());
 
-    final int maxStepCount = 1000;
+    final int maxStepCount = 2000;
     experimentBuilder.addConfiguration(
       MASConfiguration.pdptwBuilder()
         .addModel(Central.builder(
