@@ -31,10 +31,10 @@
 				<incrementalScoreCalculatorClass>com.github.rinde.logistics.pdptw.solver.optaplanner.ScoreCalculator</incrementalScoreCalculatorClass>
 			</scoreDirectorFactory>
 
-			<termination>
+			<!-- <termination>
 				<unimprovedMillisecondsSpentLimit>180000</unimprovedMillisecondsSpentLimit>
 			</termination>
-
+ -->
 			<constructionHeuristic>
 				<constructionHeuristicType>CHEAPEST_INSERTION</constructionHeuristicType>
 			</constructionHeuristic>
