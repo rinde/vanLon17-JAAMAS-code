@@ -36,7 +36,7 @@
 			</termination>
 
 			<constructionHeuristic>
-				<constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+				<constructionHeuristicType>CHEAPEST_INSERTION</constructionHeuristicType>
 			</constructionHeuristic>
 			<localSearch>
 				<!-- <acceptor>
@@ -59,6 +59,10 @@
 		</solver>
 	</inheritedSolverBenchmark>
 
+    <solverBenchmark>
+        <name>Cheapest insertion</name>
+    </solverBenchmark>
+    
     <solverBenchmark>
         <name>First fit decreasing</name>
     </solverBenchmark>
