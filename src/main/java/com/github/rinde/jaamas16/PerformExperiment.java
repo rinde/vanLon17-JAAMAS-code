@@ -40,6 +40,7 @@ import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolvers;
 import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RealtimeSolver;
 import com.github.rinde.rinsim.central.rt.RtCentral;
+import com.github.rinde.rinsim.central.rt.RtSolverPanel;
 import com.github.rinde.rinsim.central.rt.SolverToRealtimeAdapter;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
@@ -254,10 +255,14 @@ public final class PerformExperiment {
       .withObjectiveFunction(objFunc)
       .buildRealtimeSolverSupplier();
 
-    // final OptaplannerSolvers.Builder optaplannerFactory =
-    // OptaplannerSolvers.builder().withSolverFromBenchmark(
-    // "com/github/rinde/jaamas16/benchmarkConfig.xml")
-    // .withObjectiveFunction(objFunc);
+    final OptaplannerSolvers.Builder opFfdFactory =
+      OptaplannerSolvers.builder().withSolverFromBenchmark(
+        "com/github/rinde/jaamas16/firstFitDecreasingBenchmark.xml")
+        .withObjectiveFunction(objFunc);
+    final OptaplannerSolvers.Builder opCiFactory =
+      OptaplannerSolvers.builder().withSolverFromBenchmark(
+        "com/github/rinde/jaamas16/cheapestInsertionBenchmark.xml")
+        .withObjectiveFunction(objFunc);
 
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment.builder()
@@ -430,6 +435,7 @@ public final class PerformExperiment {
     // .withValidated(true)
     // .buildSolver()));
 
+    final long centralUnimprovedMs = 10000L;
     final OptaplannerSolvers.Builder opBuilder = OptaplannerSolvers.builder()
       .withObjectiveFunction(objFunc);
 
@@ -438,22 +444,21 @@ public final class PerformExperiment {
     add(experimentBuilder, opBuilder.withCheapestInsertionSolver(),
       "OP.RT-cheapest-insertion");
     add(experimentBuilder, opBuilder.withFirstFitDecreasingWithTabuSolver()
-      .withUnimprovedMsLimit(10000L),
+      .withUnimprovedMsLimit(centralUnimprovedMs),
       "OP.RT-first-fit-decreasing-with-tabu");
 
-    experimentBuilder.addConfiguration(
-      MASConfiguration.pdptwBuilder()
-        .addModel(
-          RtCentral.builder(
-            OptaplannerSolvers.builder()
-              .withFirstFitDecreasingSolver()
-              .withObjectiveFunction(objFunc)
-              .buildRealtimeSolverSupplier())
-            .withContinuousUpdates(true)
-            .withThreadGrouping(true))
-        .addModel(RealtimeClockLogger.builder())
-        .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-        .build());
+    for (final String solverKey : opFfdFactory.getSupportedSolverKeys()) {
+      add(experimentBuilder,
+        opFfdFactory.withSolverKey(solverKey)
+          .withUnimprovedMsLimit(centralUnimprovedMs),
+        "OP.RT-FFD-" + solverKey);
+    }
+    for (final String solverKey : opCiFactory.getSupportedSolverKeys()) {
+      add(experimentBuilder,
+        opCiFactory.withSolverKey(solverKey)
+          .withUnimprovedMsLimit(centralUnimprovedMs),
+        "OP.RT-CI-" + solverKey);
+    }
 
     // final long centralUnimprovedMs = 10000L;
     // for (final String name : optaplannerFactory.getSupportedSolverKeys()) {
@@ -528,7 +533,7 @@ public final class PerformExperiment {
         // .with(AuctionPanel.builder())
         .with(RoutePanel.builder())
         .with(TimeLinePanel.builder())
-        // .with(RtSolverPanel.builder())
+        .with(RtSolverPanel.builder())
         .withResolution(1280, 1024));
 
     final Optional<ExperimentResults> results =

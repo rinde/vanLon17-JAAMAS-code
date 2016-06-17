@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plannerBenchmark>
+	<benchmarkDirectory>files/results/OPTAPLANNER_BENCHMARK</benchmarkDirectory>
+	<warmUpSecondsSpentLimit>30</warmUpSecondsSpentLimit>
+	<parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
+
+	<inheritedSolverBenchmark>
+		<problemBenchmarks>
+			<solutionFileIOClass>com.github.rinde.jaamas16.OptaplannerGendreauIO</solutionFileIOClass>
+			<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_24</inputSolutionFile>
+		</problemBenchmarks>
+		<solver>
+			<constructionHeuristic>
+				<constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+			</constructionHeuristic>
+			<localSearch>
+				<unionMoveSelector>
+					<moveIteratorFactory>
+						<moveIteratorFactoryClass>com.github.rinde.logistics.pdptw.solver.optaplanner.SwapMoveIteratorFactory</moveIteratorFactoryClass>
+					</moveIteratorFactory>
+					<changeMoveSelector>
+						<entitySelector>
+							<filterClass>com.github.rinde.logistics.pdptw.solver.optaplanner.EntityFilter</filterClass>
+						</entitySelector>
+					</changeMoveSelector>
+				</unionMoveSelector>
+			</localSearch>
+		</solver>
+	</inheritedSolverBenchmark>
+
+	<solverBenchmark>
+		<name>Hill climbing</name>
+		<solver>
+			<localSearch>
+				<localSearchType>HILL_CLIMBING</localSearchType>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<solverBenchmark>
+		<name>Tabu search entity tabu</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<entityTabuRatio>0.02</entityTabuRatio>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1000</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<solverBenchmark>
+		<name>Tabu search value tabu</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<valueTabuRatio>0.02</valueTabuRatio>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1000</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<solverBenchmark>
+		<name>Tabu search move tabu</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<moveTabuSize>7</moveTabuSize>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1000</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<#list [1,4] as acceptedCountLimit>
+	<solverBenchmark>
+		<name>Simulated annealing ${acceptedCountLimit}</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<simulatedAnnealingStartingTemperature>20hard/999999999999soft</simulatedAnnealingStartingTemperature>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>${acceptedCountLimit}</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+	</#list>
+
+	<#list [1,4] as acceptedCountLimit>
+	<solverBenchmark>
+		<name>Simulated annealing ${acceptedCountLimit} with move tabu 7</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<simulatedAnnealingStartingTemperature>20hard/999999999999soft</simulatedAnnealingStartingTemperature>
+					<moveTabuSize>7</moveTabuSize>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>${acceptedCountLimit}</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+	</#list>
+
+	<solverBenchmark>
+		<name>Late acceptance</name>
+		<solver>
+			<localSearch>
+				<localSearchType>LATE_ACCEPTANCE</localSearchType>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<solverBenchmark>
+		<name>Late acceptance with entity tabu</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<lateAcceptanceSize>400</lateAcceptanceSize>
+					<entityTabuRatio>0.02</entityTabuRatio>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<solverBenchmark>
+		<name>Step counting hill climbing</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<stepCountingHillClimbingSize>400</stepCountingHillClimbingSize>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1</acceptedCountLimit>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<solverBenchmark>
+		<name>Step counting hill climbing with entity tabu and strategic oscillation</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<stepCountingHillClimbingSize>400</stepCountingHillClimbingSize>
+					<entityTabuRatio>0.02</entityTabuRatio>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1</acceptedCountLimit>
+					<finalistPodiumType>STRATEGIC_OSCILLATION</finalistPodiumType>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+	<solverBenchmark>
+		<name>Tabu search move tabu with strategic oscillation</name>
+		<solver>
+			<localSearch>
+				<acceptor>
+					<moveTabuSize>7</moveTabuSize>
+				</acceptor>
+				<forager>
+					<acceptedCountLimit>1000</acceptedCountLimit>
+					  <finalistPodiumType>STRATEGIC_OSCILLATION</finalistPodiumType>
+				</forager>
+			</localSearch>
+		</solver>
+	</solverBenchmark>
+
+</plannerBenchmark>
