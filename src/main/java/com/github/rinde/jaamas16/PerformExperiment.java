@@ -435,10 +435,11 @@ public final class PerformExperiment {
 
     add(experimentBuilder, opBuilder.withFirstFitDecreasingSolver(),
       "OP.RT-first-fit-decreasing");
-    add(experimentBuilder, opBuilder.withFirstFitDecreasingWithTabuSolver(),
-      "OP.RT-first-fit-decreasing-with-tabu");
     add(experimentBuilder, opBuilder.withCheapestInsertionSolver(),
       "OP.RT-cheapest-insertion");
+    add(experimentBuilder, opBuilder.withFirstFitDecreasingWithTabuSolver()
+      .withUnimprovedMsLimit(10000L),
+      "OP.RT-first-fit-decreasing-with-tabu");
 
     experimentBuilder.addConfiguration(
       MASConfiguration.pdptwBuilder()
