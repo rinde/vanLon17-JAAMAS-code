@@ -440,19 +440,15 @@ public final class PerformExperiment {
       .withObjectiveFunction(objFunc);
 
     add(experimentBuilder, opBuilder.withFirstFitDecreasingSolver(),
-      "OP.RT-first-fit-decreasing");
-    add(experimentBuilder, opBuilder.withCheapestInsertionSolver(),
-      "OP.RT-cheapest-insertion");
-    add(experimentBuilder, opBuilder.withFirstFitDecreasingWithTabuSolver()
-      .withUnimprovedMsLimit(centralUnimprovedMs),
-      "OP.RT-first-fit-decreasing-with-tabu");
-
+      "OP.RT-FFD");
     for (final String solverKey : opFfdFactory.getSupportedSolverKeys()) {
       add(experimentBuilder,
         opFfdFactory.withSolverKey(solverKey)
           .withUnimprovedMsLimit(centralUnimprovedMs),
         "OP.RT-FFD-" + solverKey);
     }
+    add(experimentBuilder, opBuilder.withCheapestInsertionSolver(),
+      "OP.RT-CI");
     for (final String solverKey : opCiFactory.getSupportedSolverKeys()) {
       add(experimentBuilder,
         opCiFactory.withSolverKey(solverKey)
