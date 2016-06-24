@@ -360,21 +360,22 @@ public final class PerformExperiment {
         .addModel(RealtimeClockLogger.builder())
         .build());
 
-    final int[] maxStepCounts =
-      new int[] {2500, 2750, 3000, 3250, 3500, 4000, 4500, 5000};
+    // final int[] maxStepCounts =
+    // new int[] {2500, 2750, 3000, 3250, 3500, 4000, 4500, 5000};
 
-    for (final int maxStepCount : maxStepCounts) {
-      // final int maxStepCount = 2500;
-      experimentBuilder.addConfiguration(
-        MASConfiguration.pdptwBuilder()
-          .addModel(Central.builder(
-            opFfdFactory.withSolverKey(masSolverName)
-              .withUnimprovedStepCountLimit(maxStepCount)
-              .buildSolverSupplier()))
-          .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-          .setName("OP.ST-FFD-" + masSolverName + "-SC-" + maxStepCount)
-          .build());
-    }
+    final String offlineSolver = "Tabu-search-value-tabu";
+    // for (final int maxStepCount : maxStepCounts) {
+    final int maxStepCount = 5000;
+    experimentBuilder.addConfiguration(
+      MASConfiguration.pdptwBuilder()
+        .addModel(Central.builder(
+          opFfdFactory.withSolverKey(offlineSolver)
+            .withUnimprovedStepCountLimit(maxStepCount)
+            .buildSolverSupplier()))
+        .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
+        .setName("OP.ST-FFD-" + offlineSolver + "-SC-" + maxStepCount)
+        .build());
+    // }
 
     experimentBuilder
       .addConfiguration(
