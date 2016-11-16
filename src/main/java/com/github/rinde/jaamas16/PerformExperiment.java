@@ -259,7 +259,8 @@ public final class PerformExperiment {
     final Experiment.Builder experimentBuilder = Experiment.builder()
       .computeLocal()
       .withRandomSeed(123)
-      .withThreads(11)
+      .withThreads((int) Math
+        .floor((Runtime.getRuntime().availableProcessors() - 1) / 2d))
       .repeat(1)
       .withWarmup(30000)
       .addResultListener(new CommandLineProgress(System.out))
