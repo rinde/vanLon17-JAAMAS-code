@@ -25,7 +25,6 @@ import java.util.Collection;
 import org.joda.time.format.ISODateTimeFormat;
 
 import com.github.rinde.jaamas16.PerformExperiment.AuctionStats;
-import com.github.rinde.jaamas16.PerformExperiment.ExperimentInfo;
 import com.github.rinde.rinsim.core.model.time.RealtimeTickInfo;
 import com.github.rinde.rinsim.experiment.Experiment.SimArgs;
 import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
@@ -139,9 +138,8 @@ abstract class ResultWriter implements ResultListener {
   }
 
   static void appendTimeLogSummary(SimulationResult sr, File target) {
-    if (sr.getResultObject() instanceof PerformExperiment.ExperimentInfo) {
-      final PerformExperiment.ExperimentInfo info =
-        (PerformExperiment.ExperimentInfo) sr.getResultObject();
+    if (sr.getResultObject() instanceof SimResult) {
+      final SimResult info = (SimResult) sr.getResultObject();
 
       final int tickInfoListSize = info.getTickInfoList().size();
       long sumIatNs = 0;
@@ -197,7 +195,7 @@ abstract class ResultWriter implements ResultListener {
         .put(OutputFields.NUM_UNSUC_REAUCTIONS, -1)
         .put(OutputFields.NUM_FAILED_REAUCTIONS, -1);
     } else {
-      final ExperimentInfo ei = (ExperimentInfo) sr.getResultObject();
+      final SimResult ei = (SimResult) sr.getResultObject();
       final StatisticsDTO stats = ei.getStats();
       map.put(OutputFields.COST, objFunc.computeCost(stats))
         .put(OutputFields.TRAVEL_TIME, objFunc.travelTime(stats))
@@ -239,7 +237,7 @@ abstract class ResultWriter implements ResultListener {
   }
 
   static void createTimeLog(SimulationResult sr, File experimentDir) {
-    if (!(sr.getResultObject() instanceof ExperimentInfo)) {
+    if (!(sr.getResultObject() instanceof SimResult)) {
       return;
     }
     final SimArgs simArgs = sr.getSimArgs();
@@ -253,7 +251,7 @@ abstract class ResultWriter implements ResultListener {
       simArgs.getRepetition());
 
     final File iatFile = new File(experimentDir, id + "-interarrivaltimes.csv");
-    final ExperimentInfo info = (ExperimentInfo) sr.getResultObject();
+    final SimResult info = (SimResult) sr.getResultObject();
     try (FileWriter writer = new FileWriter(iatFile)) {
       iatFile.createNewFile();
       for (final RealtimeTickInfo md : info.getTickInfoList()) {

@@ -20,10 +20,7 @@ import static com.google.common.base.Verify.verifyNotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -34,6 +31,7 @@ import com.github.rinde.logistics.pdptw.mas.TruckFactory.DefaultTruckFactory;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionPanel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionStopConditions;
+import com.github.rinde.logistics.pdptw.mas.comm.AuctionTimeStatsLogger;
 import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder.BidFunction;
@@ -46,28 +44,20 @@ import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.central.rt.RtSolverModel;
 import com.github.rinde.rinsim.central.rt.RtSolverPanel;
-import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
-import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
-import com.github.rinde.rinsim.core.model.time.RealtimeTickInfo;
 import com.github.rinde.rinsim.core.model.time.TimeModel;
 import com.github.rinde.rinsim.experiment.CommandLineProgress;
 import com.github.rinde.rinsim.experiment.Experiment;
 import com.github.rinde.rinsim.experiment.Experiment.Builder;
-import com.github.rinde.rinsim.experiment.Experiment.SimArgs;
 import com.github.rinde.rinsim.experiment.ExperimentResults;
 import com.github.rinde.rinsim.experiment.MASConfiguration;
-import com.github.rinde.rinsim.experiment.PostProcessor;
-import com.github.rinde.rinsim.experiment.PostProcessors;
 import com.github.rinde.rinsim.io.FileProvider;
 import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
-import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
 import com.github.rinde.rinsim.pdptw.common.RoutePanel;
 import com.github.rinde.rinsim.pdptw.common.RouteRenderer;
-import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
 import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
 import com.github.rinde.rinsim.scenario.Scenario;
 import com.github.rinde.rinsim.scenario.ScenarioConverters;
@@ -84,7 +74,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 
 /**
  *
@@ -274,7 +263,7 @@ public final class PerformExperiment {
       .repeat(1)
       .withWarmup(30000)
       .addResultListener(new CommandLineProgress(System.out))
-      .usePostProcessor(new LogProcessor(objFunc));
+      .usePostProcessor(new JaamasPostProcessor(objFunc));
 
     experimentType.apply(experimentBuilder);
 
@@ -304,18 +293,18 @@ public final class PerformExperiment {
     final OptaplannerSolvers.Builder opBuilder = OptaplannerSolvers.builder()
       .withObjectiveFunction(objFunc);
 
-    add(experimentBuilder, opBuilder.withFirstFitDecreasingSolver(),
+    addCentral(experimentBuilder, opBuilder.withFirstFitDecreasingSolver(),
       "OP.RT-FFD");
     for (final String solverKey : opFfdFactory.getSupportedSolverKeys()) {
-      add(experimentBuilder,
+      addCentral(experimentBuilder,
         opFfdFactory.withSolverKey(solverKey)
           .withUnimprovedMsLimit(centralUnimprovedMs),
         "OP.RT-FFD-" + solverKey);
     }
-    add(experimentBuilder, opBuilder.withCheapestInsertionSolver(),
+    addCentral(experimentBuilder, opBuilder.withCheapestInsertionSolver(),
       "OP.RT-CI");
     for (final String solverKey : opCiFactory.getSupportedSolverKeys()) {
-      add(experimentBuilder,
+      addCentral(experimentBuilder,
         opCiFactory.withSolverKey(solverKey)
           .withUnimprovedMsLimit(centralUnimprovedMs),
         "OP.RT-CI-" + solverKey);
@@ -357,6 +346,7 @@ public final class PerformExperiment {
                 AuctionStopConditions.<DoubleBid>allBidders(),
                 AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
           .withMaxAuctionDuration(30 * 60 * 1000L))
+        .addModel(AuctionTimeStatsLogger.builder())
         .addModel(RtSolverModel.builder()
           .withThreadPoolSize(3)
           .withThreadGrouping(true))
@@ -417,7 +407,7 @@ public final class PerformExperiment {
 
   }
 
-  static void add(Experiment.Builder experimentBuilder,
+  static void addCentral(Experiment.Builder experimentBuilder,
       OptaplannerSolvers.Builder opBuilder, String name) {
     experimentBuilder.addConfiguration(
       MASConfiguration.pdptwBuilder()
@@ -497,91 +487,6 @@ public final class PerformExperiment {
     static AuctionStats create(int numP, int numR, int numUn, int numF) {
       return new AutoValue_PerformExperiment_AuctionStats(numP, numR, numUn,
         numF);
-    }
-  }
-
-  @AutoValue
-  abstract static class ExperimentInfo implements Serializable {
-    private static final long serialVersionUID = 6324066851233398736L;
-
-    abstract List<LogEntry> getLog();
-
-    abstract long getRtCount();
-
-    abstract long getStCount();
-
-    abstract StatisticsDTO getStats();
-
-    abstract ImmutableList<RealtimeTickInfo> getTickInfoList();
-
-    abstract Optional<AuctionStats> getAuctionStats();
-
-    static ExperimentInfo create(List<LogEntry> log, long rt, long st,
-        StatisticsDTO stats, ImmutableList<RealtimeTickInfo> dev,
-        Optional<AuctionStats> aStats) {
-      return new AutoValue_PerformExperiment_ExperimentInfo(log, rt, st, stats,
-        dev, aStats);
-    }
-  }
-
-  static class LogProcessor
-      implements PostProcessor<ExperimentInfo>, Serializable {
-    private static final long serialVersionUID = 5997690791395717045L;
-    ObjectiveFunction objectiveFunction;
-
-    LogProcessor(ObjectiveFunction objFunc) {
-      objectiveFunction = objFunc;
-    }
-
-    @Override
-    public ExperimentInfo collectResults(Simulator sim, SimArgs args) {
-
-      @Nullable
-      final RealtimeClockLogger logger =
-        sim.getModelProvider().tryGetModel(RealtimeClockLogger.class);
-
-      @Nullable
-      final AuctionCommModel<?> auctionModel =
-        sim.getModelProvider().tryGetModel(AuctionCommModel.class);
-
-      final Optional<AuctionStats> aStats;
-      if (auctionModel == null) {
-        aStats = Optional.absent();
-      } else {
-        final int parcels = auctionModel.getNumParcels();
-        final int reauctions = auctionModel.getNumAuctions() - parcels;
-        final int unsuccessful = auctionModel.getNumUnsuccesfulAuctions();
-        final int failed = auctionModel.getNumFailedAuctions();
-        aStats = Optional
-          .of(AuctionStats.create(parcels, reauctions, unsuccessful, failed));
-      }
-
-      final StatisticsDTO stats =
-        PostProcessors.statisticsPostProcessor(objectiveFunction)
-          .collectResults(sim, args);
-
-      LOGGER.info("success: {}", args);
-
-      if (logger == null) {
-        return ExperimentInfo.create(new ArrayList<LogEntry>(), 0,
-          sim.getCurrentTime() / sim.getTimeStep(), stats,
-          ImmutableList.<RealtimeTickInfo>of(), aStats);
-      }
-      return ExperimentInfo.create(logger.getLog(), logger.getRtCount(),
-        logger.getStCount(), stats, logger.getTickInfoList(), aStats);
-    }
-
-    @Override
-    public FailureStrategy handleFailure(Exception e, Simulator sim,
-        SimArgs args) {
-
-      System.out.println("Fail: " + args);
-      e.printStackTrace();
-      // System.out.println(AffinityLock.dumpLocks());
-
-      return FailureStrategy.RETRY;
-      // return FailureStrategy.ABORT_EXPERIMENT_RUN;
-
     }
   }
 }
