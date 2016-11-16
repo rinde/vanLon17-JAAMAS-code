@@ -84,7 +84,7 @@ public final class OptaplannerGendreauIO implements SolutionFileIO {
     final GlobalStateObject gso =
       conv.convert(SolveArgs.create()
         .useAllParcels()
-        .useEmptyRoutes(scenario.getProblemClass().vehicles)).state;
+        .useEmptyRoutes(scenario.getProblemClass().vehicles));
 
     checkState(!gso.getVehicles().isEmpty());
 

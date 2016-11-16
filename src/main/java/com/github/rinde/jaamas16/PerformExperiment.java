@@ -338,11 +338,14 @@ public final class PerformExperiment {
               opFfdFactory.withSolverKey(masSolverName)
                 .withUnimprovedMsLimit(rpMs)
                 .buildRealtimeSolverSupplier()))
-            .setCommunicator(RtSolverBidder.supplier(objFunc,
-              opFfdFactory.withSolverKey(masSolverName)
-                .withUnimprovedMsLimit(bMs)
-                .buildRealtimeSolverSupplier(),
-              bf))
+            .setCommunicator(
+
+              RtSolverBidder.realtimeBuilder(objFunc,
+                opFfdFactory.withSolverKey(masSolverName)
+                  .withUnimprovedMsLimit(bMs)
+                  .buildRealtimeSolverSupplier())
+                .withBidFunction(bf)
+                .withReauctionCooldownPeriod(0))
             .setLazyComputation(false)
             .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
             .build())
