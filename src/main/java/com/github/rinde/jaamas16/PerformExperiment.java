@@ -312,7 +312,7 @@ public final class PerformExperiment {
     }
 
     final long rpMs = 2500L;
-    final long bMs = 100L;
+    final long bMs = 10L;
     final BidFunction bf = BidFunctions.BALANCED_HIGH;
     final String masSolverName =
       "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
