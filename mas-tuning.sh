@@ -1,7 +1,7 @@
 export MAVEN_OPTS=-server
 nohup mvn clean compile exec:java -Dexec.mainClass="com.github.rinde.jaamas16.PerformExperiment" -Dexec.args="-exp vanlon15 \
 --show-gui false \
---include c32 -r 1 \
+--include c32,c33,c34,c35 -r 1 \
 --scenarios.exclude p0 \
 --scenarios.add files/tuning-dataset/ \
 --scenarios.filter glob:**.scen \

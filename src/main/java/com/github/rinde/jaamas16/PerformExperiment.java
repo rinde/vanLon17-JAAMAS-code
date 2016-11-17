@@ -312,49 +312,52 @@ public final class PerformExperiment {
     }
 
     final long rpMs = 2500L;
-    final long bMs = 5L;
+    // final long bMs = 5L;
     final BidFunction bf = BidFunctions.BALANCED_HIGH;
     final String masSolverName =
       "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
 
-    experimentBuilder.addConfiguration(
-      MASConfiguration.pdptwBuilder()
-        .setName(
-          "ReAuction-FFD-" + masSolverName + "-RP-" + rpMs + "-BID-" + bMs
-            + "-" + bf)
-        .addEventHandler(AddVehicleEvent.class,
-          DefaultTruckFactory.builder()
-            .setRoutePlanner(RtSolverRoutePlanner.supplier(
-              opFfdFactory.withSolverKey(masSolverName)
-                .withUnimprovedMsLimit(rpMs)
-                .buildRealtimeSolverSupplier()))
-            .setCommunicator(
+    final long[] options = new long[] {1L, 2L, 15L, 50L};
 
-              RtSolverBidder.realtimeBuilder(objFunc,
+    for (final long bMs : options) {
+      experimentBuilder.addConfiguration(
+        MASConfiguration.pdptwBuilder()
+          .setName(
+            "ReAuction-FFD-" + masSolverName + "-RP-" + rpMs + "-BID-" + bMs
+              + "-" + bf)
+          .addEventHandler(AddVehicleEvent.class,
+            DefaultTruckFactory.builder()
+              .setRoutePlanner(RtSolverRoutePlanner.supplier(
                 opFfdFactory.withSolverKey(masSolverName)
-                  .withUnimprovedMsLimit(bMs)
-                  .withTimeMeasurementsEnabled(true)
-                  .buildRealtimeSolverSupplier())
-                .withBidFunction(bf)
-                .withReauctionCooldownPeriod(0))
-            .setLazyComputation(false)
-            .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
-            .build())
-        .addModel(AuctionCommModel.builder(DoubleBid.class)
-          .withStopCondition(
-            AuctionStopConditions.and(
-              AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
-              AuctionStopConditions.<DoubleBid>or(
-                AuctionStopConditions.<DoubleBid>allBidders(),
-                AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
-          .withMaxAuctionDuration(30 * 60 * 1000L))
-        .addModel(AuctionTimeStatsLogger.builder())
-        .addModel(RtSolverModel.builder()
-          .withThreadPoolSize(3)
-          .withThreadGrouping(true))
-        .addModel(RealtimeClockLogger.builder())
-        .build());
+                  .withUnimprovedMsLimit(rpMs)
+                  .buildRealtimeSolverSupplier()))
+              .setCommunicator(
 
+                RtSolverBidder.realtimeBuilder(objFunc,
+                  opFfdFactory.withSolverKey(masSolverName)
+                    .withUnimprovedMsLimit(bMs)
+                    .withTimeMeasurementsEnabled(true)
+                    .buildRealtimeSolverSupplier())
+                  .withBidFunction(bf)
+                  .withReauctionCooldownPeriod(0))
+              .setLazyComputation(false)
+              .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
+              .build())
+          .addModel(AuctionCommModel.builder(DoubleBid.class)
+            .withStopCondition(
+              AuctionStopConditions.and(
+                AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+                AuctionStopConditions.<DoubleBid>or(
+                  AuctionStopConditions.<DoubleBid>allBidders(),
+                  AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
+            .withMaxAuctionDuration(30 * 60 * 1000L))
+          .addModel(AuctionTimeStatsLogger.builder())
+          .addModel(RtSolverModel.builder()
+            .withThreadPoolSize(3)
+            .withThreadGrouping(true))
+          .addModel(RealtimeClockLogger.builder())
+          .build());
+    }
     // final int[] maxStepCounts =
     // new int[] {2500, 2750, 3000, 3250, 3500, 4000, 4500, 5000};
 
