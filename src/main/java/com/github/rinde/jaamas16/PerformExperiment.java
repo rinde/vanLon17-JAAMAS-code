@@ -333,6 +333,7 @@ public final class PerformExperiment {
               RtSolverBidder.realtimeBuilder(objFunc,
                 opFfdFactory.withSolverKey(masSolverName)
                   .withUnimprovedMsLimit(bMs)
+                  .withTimeMeasurementsEnabled(true)
                   .buildRealtimeSolverSupplier())
                 .withBidFunction(bf)
                 .withReauctionCooldownPeriod(0))
