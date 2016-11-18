@@ -33,12 +33,12 @@ public final class GenerateTuningDataset {
   public static void main(String[] args) {
     final long time = System.currentTimeMillis();
     final DatasetGenerator generator = DatasetGenerator.builder()
-      .setRandomSeed(201611161751L)
+      .setRandomSeed(201611181750L)
       .setDatasetDir("files/tuning-dataset/")
-      .setDynamismLevels(asList(.2))
-      .setUrgencyLevels(asList(5L))
+      .setDynamismLevels(asList(.2, .5, .8))
+      .setUrgencyLevels(asList(5L, 20L, 35L))
       .setScaleLevels(asList(10d))
-      .setNumInstances(10)
+      .setNumInstances(5)
       .build();
 
     generator.generate();
