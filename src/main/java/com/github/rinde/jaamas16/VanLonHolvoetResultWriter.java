@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel.AuctionEvent;
 import com.github.rinde.logistics.pdptw.mas.comm.Bidder;
+import com.github.rinde.logistics.pdptw.mas.route.RoutePlanner;
 import com.github.rinde.rinsim.central.SolverTimeMeasurement;
 import com.github.rinde.rinsim.experiment.Experiment.SimArgs;
 import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
@@ -65,27 +66,27 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
       return;
     }
     final SimResult info = (SimResult) result.getResultObject();
+    if (info.getAuctionEvents().isEmpty()
+      || info.getBidTimeMeasurements().isEmpty()
+      || info.getRpTimeMeasurements().isEmpty()) {
+      return;
+    }
+    final SimArgs simArgs = result.getSimArgs();
+    final Scenario scenario = simArgs.getScenario();
 
-    if (!info.getAuctionEvents().isEmpty()
-      && !info.getTimeMeasurements().isEmpty()) {
+    final String id = Joiner.on("-").join(
+      simArgs.getMasConfig().getName(),
+      scenario.getProblemClass().getId(),
+      scenario.getProblemInstanceId(),
+      simArgs.getRandomSeed(),
+      simArgs.getRepetition());
 
-      final SimArgs simArgs = result.getSimArgs();
-      final Scenario scenario = simArgs.getScenario();
+    final File statsDir =
+      new File(experimentDirectory, "computation-time-stats");
+    statsDir.mkdirs();
 
-      final String id = Joiner.on("-").join(
-        simArgs.getMasConfig().getName(),
-        scenario.getProblemClass().getId(),
-        scenario.getProblemInstanceId(),
-        simArgs.getRandomSeed(),
-        simArgs.getRepetition());
-
-      final File statsDir =
-        new File(experimentDirectory, "computation-time-stats");
-      statsDir.mkdirs();
-
+    if (!info.getAuctionEvents().isEmpty()) {
       final File auctionsFile = new File(statsDir, id + "-auctions.csv");
-      final File compFile = new File(statsDir, id + "-bid-computations.csv");
-
       final StringBuilder auctionContents = new StringBuilder();
       auctionContents.append("auction_start,auction_end,num_bids")
         .append(System.lineSeparator());
@@ -96,9 +97,17 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
           e.getNumBids());
         auctionContents.append(System.lineSeparator());
       }
+      try {
+        Files.write(auctionContents, auctionsFile, Charsets.UTF_8);
+      } catch (final IOException e) {
+        throw new IllegalStateException(e);
+      }
+    }
 
+    if (!info.getBidTimeMeasurements().isEmpty()) {
+      final File compFile = new File(statsDir, id + "-bid-computations.csv");
       final ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> measurements =
-        info.getTimeMeasurements();
+        info.getBidTimeMeasurements();
       final StringBuilder compContents = new StringBuilder();
       compContents
         .append("bidder_id,comp_start_sim_time,route_length,duration_ns")
@@ -107,11 +116,6 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
       for (final Bidder<?> bidder : measurements.keySet()) {
         final List<SolverTimeMeasurement> ms = measurements.get(bidder);
         for (final SolverTimeMeasurement m : ms) {
-
-          // int available = m.input().getAvailableParcels().size();
-          // int total = GlobalStateObjects.allParcels(m.input()).size();
-          // int pickedUp = total - available;
-          // (available * 2) + pickedUp;
           final int routeLength =
             m.input().getVehicles().get(0).getRoute().get().size();
 
@@ -125,13 +129,43 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
         bidderId++;
       }
       try {
-        Files.write(auctionContents, auctionsFile, Charsets.UTF_8);
         Files.write(compContents, compFile, Charsets.UTF_8);
       } catch (final IOException e1) {
         throw new IllegalStateException(e1);
       }
-
     }
+
+    if (!info.getRpTimeMeasurements().isEmpty()) {
+      final File rpCompFile = new File(statsDir, id + "-rp-computations.csv");
+      final ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> measurements =
+        info.getRpTimeMeasurements();
+      final StringBuilder compContents = new StringBuilder();
+      compContents
+        .append("route_planner_id,comp_start_sim_time,route_length,duration_ns")
+        .append(System.lineSeparator());
+      int rpId = 0;
+      for (final RoutePlanner rp : measurements.keySet()) {
+        final List<SolverTimeMeasurement> ms = measurements.get(rp);
+        for (final SolverTimeMeasurement m : ms) {
+          final int routeLength =
+            m.input().getVehicles().get(0).getRoute().get().size();
+
+          Joiner.on(",").appendTo(compContents,
+            rpId,
+            m.input().getTime(),
+            routeLength,
+            m.durationNs());
+          compContents.append(System.lineSeparator());
+        }
+        rpId++;
+      }
+      try {
+        Files.write(compContents, rpCompFile, Charsets.UTF_8);
+      } catch (final IOException e1) {
+        throw new IllegalStateException(e1);
+      }
+    }
+
   }
 
   @Override

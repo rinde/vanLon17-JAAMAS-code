@@ -36,6 +36,7 @@ import com.github.rinde.logistics.pdptw.mas.comm.DoubleBid;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder.BidFunction;
 import com.github.rinde.logistics.pdptw.mas.comm.RtSolverBidder.BidFunctions;
+import com.github.rinde.logistics.pdptw.mas.route.RoutePlannerStatsLogger;
 import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
@@ -317,7 +318,8 @@ public final class PerformExperiment {
     final String masSolverName =
       "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
 
-    final long[] options = new long[] {1L, 2L, 15L, 50L};
+    final long[] options =
+      new long[] {1L, 2L, 5L, 8L, 10L, 15L, 20L, 50L, 100L};
 
     for (final long bMs : options) {
       experimentBuilder.addConfiguration(
@@ -330,6 +332,7 @@ public final class PerformExperiment {
               .setRoutePlanner(RtSolverRoutePlanner.supplier(
                 opFfdFactory.withSolverKey(masSolverName)
                   .withUnimprovedMsLimit(rpMs)
+                  .withTimeMeasurementsEnabled(true)
                   .buildRealtimeSolverSupplier()))
               .setCommunicator(
 
@@ -352,6 +355,7 @@ public final class PerformExperiment {
                   AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
             .withMaxAuctionDuration(30 * 60 * 1000L))
           .addModel(AuctionTimeStatsLogger.builder())
+          .addModel(RoutePlannerStatsLogger.builder())
           .addModel(RtSolverModel.builder()
             .withThreadPoolSize(3)
             .withThreadGrouping(true))

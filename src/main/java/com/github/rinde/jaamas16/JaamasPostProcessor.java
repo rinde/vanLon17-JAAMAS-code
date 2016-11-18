@@ -25,6 +25,8 @@ import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel.AuctionEvent;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionTimeStatsLogger;
 import com.github.rinde.logistics.pdptw.mas.comm.Bidder;
+import com.github.rinde.logistics.pdptw.mas.route.RoutePlanner;
+import com.github.rinde.logistics.pdptw.mas.route.RoutePlannerStatsLogger;
 import com.github.rinde.rinsim.central.SolverTimeMeasurement;
 import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger;
@@ -83,12 +85,20 @@ class JaamasPostProcessor implements PostProcessor<SimResult>, Serializable {
     ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> timeMeasurements;
     if (auctionLogger != null) {
       finishEvents = auctionLogger.getAuctionFinishEvents();
-      timeMeasurements =
-        auctionLogger
-          .getTimeMeasurements();
+      timeMeasurements = auctionLogger.getTimeMeasurements();
     } else {
       finishEvents = ImmutableList.of();
       timeMeasurements = ImmutableListMultimap.of();
+    }
+
+    @Nullable
+    final RoutePlannerStatsLogger rpLogger =
+      sim.getModelProvider().tryGetModel(RoutePlannerStatsLogger.class);
+    ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> rpTimeMeasurements;
+    if (auctionLogger != null) {
+      rpTimeMeasurements = rpLogger.getTimeMeasurements();
+    } else {
+      rpTimeMeasurements = ImmutableListMultimap.of();
     }
 
     if (logger == null) {
@@ -96,11 +106,11 @@ class JaamasPostProcessor implements PostProcessor<SimResult>, Serializable {
         sim.getCurrentTime() / sim.getTimeStep(), stats,
         ImmutableList.<RealtimeTickInfo>of(), aStats,
         finishEvents,
-        timeMeasurements);
+        timeMeasurements, rpTimeMeasurements);
     }
     return SimResult.create(logger.getLog(), logger.getRtCount(),
       logger.getStCount(), stats, logger.getTickInfoList(), aStats,
-      finishEvents, timeMeasurements);
+      finishEvents, timeMeasurements, rpTimeMeasurements);
   }
 
   @Override

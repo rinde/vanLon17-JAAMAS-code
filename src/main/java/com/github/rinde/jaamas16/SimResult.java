@@ -21,6 +21,7 @@ import java.util.List;
 import com.github.rinde.jaamas16.PerformExperiment.AuctionStats;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel.AuctionEvent;
 import com.github.rinde.logistics.pdptw.mas.comm.Bidder;
+import com.github.rinde.logistics.pdptw.mas.route.RoutePlanner;
 import com.github.rinde.rinsim.central.SolverTimeMeasurement;
 import com.github.rinde.rinsim.core.model.time.RealtimeClockLogger.LogEntry;
 import com.github.rinde.rinsim.core.model.time.RealtimeTickInfo;
@@ -48,14 +49,17 @@ abstract class SimResult implements Serializable {
 
   abstract ImmutableList<AuctionEvent> getAuctionEvents();
 
-  abstract ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> getTimeMeasurements();
+  abstract ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> getBidTimeMeasurements();
+
+  abstract ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> getRpTimeMeasurements();
 
   static SimResult create(List<LogEntry> log, long rt, long st,
       StatisticsDTO stats, ImmutableList<RealtimeTickInfo> dev,
       Optional<AuctionStats> aStats,
       ImmutableList<AuctionEvent> auctionEvents,
-      ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> timeMeasurements) {
+      ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> timeMeasurements,
+      ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> rpTimeMeasurements) {
     return new AutoValue_SimResult(log, rt, st, stats, dev, aStats,
-      auctionEvents, timeMeasurements);
+      auctionEvents, timeMeasurements, rpTimeMeasurements);
   }
 }
