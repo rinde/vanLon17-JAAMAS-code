@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import com.github.rinde.jaamas16.SimResult.TimeMeasurements;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel.AuctionEvent;
 import com.github.rinde.logistics.pdptw.mas.comm.Bidder;
 import com.github.rinde.logistics.pdptw.mas.route.RoutePlanner;
@@ -66,9 +67,11 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
       return;
     }
     final SimResult info = (SimResult) result.getResultObject();
-    if (info.getAuctionEvents().isEmpty()
-      || info.getBidTimeMeasurements().isEmpty()
-      || info.getRpTimeMeasurements().isEmpty()) {
+    final TimeMeasurements measurements = info.getTimeMeasurements().get();
+
+    if (measurements.getAuctionEvents().isEmpty()
+      || measurements.getBidTimeMeasurements().isEmpty()
+      || measurements.getRpTimeMeasurements().isEmpty()) {
       return;
     }
     final SimArgs simArgs = result.getSimArgs();
@@ -85,12 +88,12 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
       new File(experimentDirectory, "computation-time-stats");
     statsDir.mkdirs();
 
-    if (!info.getAuctionEvents().isEmpty()) {
+    if (!measurements.getAuctionEvents().isEmpty()) {
       final File auctionsFile = new File(statsDir, id + "-auctions.csv");
       final StringBuilder auctionContents = new StringBuilder();
       auctionContents.append("auction_start,auction_end,num_bids")
         .append(System.lineSeparator());
-      for (final AuctionEvent e : info.getAuctionEvents()) {
+      for (final AuctionEvent e : measurements.getAuctionEvents()) {
         Joiner.on(",").appendTo(auctionContents,
           e.getAuctionStartTime(),
           e.getTime(),
@@ -104,17 +107,17 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
       }
     }
 
-    if (!info.getBidTimeMeasurements().isEmpty()) {
+    if (!measurements.getBidTimeMeasurements().isEmpty()) {
       final File compFile = new File(statsDir, id + "-bid-computations.csv");
-      final ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> measurements =
-        info.getBidTimeMeasurements();
+      final ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> bidMeasurements =
+        measurements.getBidTimeMeasurements();
       final StringBuilder compContents = new StringBuilder();
       compContents
         .append("bidder_id,comp_start_sim_time,route_length,duration_ns")
         .append(System.lineSeparator());
       int bidderId = 0;
-      for (final Bidder<?> bidder : measurements.keySet()) {
-        final List<SolverTimeMeasurement> ms = measurements.get(bidder);
+      for (final Bidder<?> bidder : bidMeasurements.keySet()) {
+        final List<SolverTimeMeasurement> ms = bidMeasurements.get(bidder);
         for (final SolverTimeMeasurement m : ms) {
           final int routeLength =
             m.input().getVehicles().get(0).getRoute().get().size();
@@ -135,17 +138,17 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
       }
     }
 
-    if (!info.getRpTimeMeasurements().isEmpty()) {
+    if (!measurements.getRpTimeMeasurements().isEmpty()) {
       final File rpCompFile = new File(statsDir, id + "-rp-computations.csv");
-      final ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> measurements =
-        info.getRpTimeMeasurements();
+      final ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> solMeasurements =
+        measurements.getRpTimeMeasurements();
       final StringBuilder compContents = new StringBuilder();
       compContents
         .append("route_planner_id,comp_start_sim_time,route_length,duration_ns")
         .append(System.lineSeparator());
       int rpId = 0;
-      for (final RoutePlanner rp : measurements.keySet()) {
-        final List<SolverTimeMeasurement> ms = measurements.get(rp);
+      for (final RoutePlanner rp : solMeasurements.keySet()) {
+        final List<SolverTimeMeasurement> ms = solMeasurements.get(rp);
         for (final SolverTimeMeasurement m : ms) {
           final int routeLength =
             m.input().getVehicles().get(0).getRoute().get().size();
@@ -166,6 +169,8 @@ public class VanLonHolvoetResultWriter extends ResultWriter {
       }
     }
 
+    // clear measurements to avoid filling memory
+    info.getTimeMeasurements().clear();
   }
 
   @Override

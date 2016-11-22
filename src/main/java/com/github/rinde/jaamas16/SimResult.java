@@ -15,8 +15,13 @@
  */
 package com.github.rinde.jaamas16;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import java.io.Serializable;
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 import com.github.rinde.jaamas16.PerformExperiment.AuctionStats;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel.AuctionEvent;
@@ -47,19 +52,55 @@ abstract class SimResult implements Serializable {
 
   abstract Optional<AuctionStats> getAuctionStats();
 
-  abstract ImmutableList<AuctionEvent> getAuctionEvents();
-
-  abstract ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> getBidTimeMeasurements();
-
-  abstract ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> getRpTimeMeasurements();
+  abstract EphemeralContainer<TimeMeasurements> getTimeMeasurements();
 
   static SimResult create(List<LogEntry> log, long rt, long st,
       StatisticsDTO stats, ImmutableList<RealtimeTickInfo> dev,
       Optional<AuctionStats> aStats,
       ImmutableList<AuctionEvent> auctionEvents,
-      ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> timeMeasurements,
-      ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> rpTimeMeasurements) {
+      ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> bidTimeMsms,
+      ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> rpTimeMsms) {
+
     return new AutoValue_SimResult(log, rt, st, stats, dev, aStats,
-      auctionEvents, timeMeasurements, rpTimeMeasurements);
+      new EphemeralContainer<>(
+        TimeMeasurements.create(auctionEvents, bidTimeMsms,
+          rpTimeMsms)));
+  }
+
+  static class EphemeralContainer<T> {
+
+    @Nullable
+    private T value;
+
+    EphemeralContainer(T val) {
+      checkNotNull(val);
+      value = val;
+    }
+
+    T get() {
+      checkState(value != null);
+      return value;
+    }
+
+    void clear() {
+      value = null;
+    }
+
+  }
+
+  @AutoValue
+  abstract static class TimeMeasurements {
+    abstract ImmutableList<AuctionEvent> getAuctionEvents();
+
+    abstract ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> getBidTimeMeasurements();
+
+    abstract ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> getRpTimeMeasurements();
+
+    static TimeMeasurements create(ImmutableList<AuctionEvent> auctionEvents,
+        ImmutableListMultimap<Bidder<?>, SolverTimeMeasurement> timeMeasurements,
+        ImmutableListMultimap<RoutePlanner, SolverTimeMeasurement> rpTimeMeasurements) {
+      return new AutoValue_SimResult_TimeMeasurements(auctionEvents,
+        timeMeasurements, rpTimeMeasurements);
+    }
   }
 }
