@@ -21,6 +21,8 @@ import static com.google.common.base.Verify.verifyNotNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -56,6 +58,7 @@ import com.github.rinde.rinsim.experiment.MASConfiguration;
 import com.github.rinde.rinsim.io.FileProvider;
 import com.github.rinde.rinsim.pdptw.common.AddParcelEvent;
 import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
+import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
 import com.github.rinde.rinsim.pdptw.common.RouteFollowingVehicle;
 import com.github.rinde.rinsim.pdptw.common.RoutePanel;
 import com.github.rinde.rinsim.pdptw.common.RouteRenderer;
@@ -75,6 +78,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 
 /**
  *
@@ -224,6 +228,20 @@ public final class PerformExperiment {
     }
   }
 
+  enum Configurations {
+
+    MAS_TUNING_B_MS, RT_CIH_OPT2_SOLVERS;
+
+    static ImmutableList<Configurations> parse(String string) {
+      final ImmutableList.Builder<Configurations> listBuilder =
+        ImmutableList.builder();
+      for (final String part : string.split(",")) {
+        listBuilder.add(valueOf(part));
+      }
+      return listBuilder.build();
+    }
+  }
+
   public static void main(String[] args) throws IOException {
     System.out.println(System.getProperty("java.vm.name") + ", "
       + System.getProperty("java.vm.vendor") + ", "
@@ -241,8 +259,12 @@ public final class PerformExperiment {
 
     final ExperimentType experimentType = ExperimentType.find(args[1]);
     System.out.println(experimentType);
-    final String[] expArgs = new String[args.length - 2];
-    System.arraycopy(args, 2, expArgs, 0, args.length - 2);
+
+    final List<Configurations> configs = Configurations.parse(args[2]);
+    System.out.println(configs);
+
+    final String[] expArgs = new String[args.length - 3];
+    System.arraycopy(args, 3, expArgs, 0, args.length - 3);
 
     final Gendreau06ObjectiveFunction objFunc =
       experimentType.getObjectiveFunction();
@@ -269,22 +291,25 @@ public final class PerformExperiment {
 
     experimentType.apply(experimentBuilder);
 
-    // cheapest insertion
+    for (final Configurations config : configs) {
+      switch (config) {
+
+      case MAS_TUNING_B_MS:
+        experimentBuilder
+          .addConfigurations(masTuningBmsConfigs(opFfdFactory, objFunc));
+        break;
+
+      case RT_CIH_OPT2_SOLVERS:
+        experimentBuilder.addConfigurations(rtCihOpt2Solvers(objFunc));
+        break;
+
+      }
+    }
+
     experimentBuilder.addConfiguration(MASConfiguration
-      .builder(RtCentral.solverConfigurationAdapt(
-        CheapestInsertionHeuristic.supplier(objFunc), "", true))
-      .addModel(RealtimeClockLogger.builder()).build())
-
-      // 2-opt cheapest insertion
-      .addConfiguration(MASConfiguration
-        .builder(RtCentral.solverConfiguration(Opt2.builder()
-          .withObjectiveFunction(objFunc).buildRealtimeSolverSupplier(), ""))
-        .addModel(RealtimeClockLogger.builder()).build())
-
-      .addConfiguration(MASConfiguration
-        .builder(Central
-          .solverConfiguration(CheapestInsertionHeuristic.supplier(objFunc)))
-        .build())
+      .builder(Central.solverConfiguration(
+        CheapestInsertionHeuristic.supplier(objFunc)))
+      .build())
 
       .addConfiguration(MASConfiguration
         .builder(Central.solverConfiguration(
@@ -414,6 +439,75 @@ public final class PerformExperiment {
     System.out.println("Done, computed " + results.get().getResults().size()
       + " simulations in " + duration / 1000d + "s");
 
+  }
+
+  static List<MASConfiguration> masTuningBmsConfigs(
+      OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
+    final List<MASConfiguration> configs = new ArrayList<>();
+
+    final long rpMs = 2500L;
+    // final long bMs = 5L;
+    final BidFunction bf = BidFunctions.BALANCED_HIGH;
+    final String masSolverName =
+      "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
+
+    final long[] options =
+      new long[] {1L, 2L, 5L, 8L, 10L, 15L, 20L, 50L, 100L};
+
+    for (final long bMs : options) {
+      configs.add(
+        MASConfiguration.pdptwBuilder()
+          .setName(
+            "ReAuction-FFD-" + masSolverName + "-RP-" + rpMs + "-BID-" + bMs
+              + "-" + bf)
+          .addEventHandler(AddVehicleEvent.class,
+            DefaultTruckFactory.builder()
+              .setRoutePlanner(RtSolverRoutePlanner.supplier(
+                opFfdFactory.withSolverKey(masSolverName)
+                  .withUnimprovedMsLimit(rpMs)
+                  .withTimeMeasurementsEnabled(true)
+                  .buildRealtimeSolverSupplier()))
+              .setCommunicator(
+
+                RtSolverBidder.realtimeBuilder(objFunc,
+                  opFfdFactory.withSolverKey(masSolverName)
+                    .withUnimprovedMsLimit(bMs)
+                    .withTimeMeasurementsEnabled(true)
+                    .buildRealtimeSolverSupplier())
+                  .withBidFunction(bf)
+                  .withReauctionCooldownPeriod(0))
+              .setLazyComputation(false)
+              .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
+              .build())
+          .addModel(AuctionCommModel.builder(DoubleBid.class)
+            .withStopCondition(
+              AuctionStopConditions.and(
+                AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+                AuctionStopConditions.<DoubleBid>or(
+                  AuctionStopConditions.<DoubleBid>allBidders(),
+                  AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
+            .withMaxAuctionDuration(30 * 60 * 1000L))
+          .addModel(AuctionTimeStatsLogger.builder())
+          .addModel(RoutePlannerStatsLogger.builder())
+          .addModel(RtSolverModel.builder()
+            .withThreadPoolSize(3)
+            .withThreadGrouping(true))
+          .addModel(RealtimeClockLogger.builder())
+          .build());
+    }
+    return configs;
+  }
+
+  static List<MASConfiguration> rtCihOpt2Solvers(ObjectiveFunction objFunc) {
+    return ImmutableList.of(
+      // cheapest insertion
+      MASConfiguration.builder(RtCentral.solverConfigurationAdapt(
+        CheapestInsertionHeuristic.supplier(objFunc), "", true))
+        .addModel(RealtimeClockLogger.builder()).build(),
+      // 2-opt cheapest insertion
+      MASConfiguration.builder(RtCentral.solverConfiguration(Opt2.builder()
+        .withObjectiveFunction(objFunc).buildRealtimeSolverSupplier(), ""))
+        .addModel(RealtimeClockLogger.builder()).build());
   }
 
   static void addCentral(Experiment.Builder experimentBuilder,
