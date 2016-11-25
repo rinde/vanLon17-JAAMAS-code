@@ -1,4 +1,4 @@
-export MAVEN_OPTS='-server -Xmx25g'
+export MAVEN_OPTS='-server -Xmx25000m'
 nohup mvn clean compile -U exec:java -Dexec.mainClass="com.github.rinde.jaamas16.PerformExperiment" -Dexec.args="-exp \
 vanlon15 \
 MAS_TUNING_RP_AND_B_MS \
