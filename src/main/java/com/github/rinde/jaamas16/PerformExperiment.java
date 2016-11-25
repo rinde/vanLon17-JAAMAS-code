@@ -43,7 +43,6 @@ import com.github.rinde.logistics.pdptw.mas.route.RtSolverRoutePlanner;
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
 import com.github.rinde.logistics.pdptw.solver.optaplanner.OptaplannerSolvers;
-import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.central.rt.RtCentral;
 import com.github.rinde.rinsim.central.rt.RtSolverModel;
 import com.github.rinde.rinsim.central.rt.RtSolverPanel;
@@ -230,7 +229,7 @@ public final class PerformExperiment {
 
   enum Configurations {
 
-    MAS_TUNING_B_MS, RT_CIH_OPT2_SOLVERS;
+    MAS_TUNING_B_MS, MAS_TUNING_RP_AND_B_MS, RT_CIH_OPT2_SOLVERS;
 
     static ImmutableList<Configurations> parse(String string) {
       final ImmutableList.Builder<Configurations> listBuilder =
@@ -298,6 +297,10 @@ public final class PerformExperiment {
         experimentBuilder
           .addConfigurations(masTuningBmsConfigs(opFfdFactory, objFunc));
         break;
+      case MAS_TUNING_RP_AND_B_MS:
+        experimentBuilder
+          .addConfigurations(masTuningRPandBmsConfigs(opFfdFactory, objFunc));
+        break;
 
       case RT_CIH_OPT2_SOLVERS:
         experimentBuilder.addConfigurations(rtCihOpt2Solvers(objFunc));
@@ -306,111 +309,65 @@ public final class PerformExperiment {
       }
     }
 
-    experimentBuilder.addConfiguration(MASConfiguration
-      .builder(Central.solverConfiguration(
-        CheapestInsertionHeuristic.supplier(objFunc)))
-      .build())
+    // experimentBuilder.addConfiguration(MASConfiguration
+    // .builder(Central.solverConfiguration(
+    // CheapestInsertionHeuristic.supplier(objFunc)))
+    // .build())
+    //
+    // .addConfiguration(MASConfiguration
+    // .builder(Central.solverConfiguration(
+    // Opt2.builder().withObjectiveFunction(objFunc).buildSolverSupplier()))
+    // .build());
+    //
+    // final long centralUnimprovedMs = 10000L;
+    // final OptaplannerSolvers.Builder opBuilder = OptaplannerSolvers.builder()
+    // .withObjectiveFunction(objFunc);
+    //
+    // addCentral(experimentBuilder, opBuilder.withFirstFitDecreasingSolver(),
+    // "OP.RT-FFD");
+    // for (final String solverKey : opFfdFactory.getSupportedSolverKeys()) {
+    // addCentral(experimentBuilder,
+    // opFfdFactory.withSolverKey(solverKey)
+    // .withUnimprovedMsLimit(centralUnimprovedMs),
+    // "OP.RT-FFD-" + solverKey);
+    // }
+    // addCentral(experimentBuilder, opBuilder.withCheapestInsertionSolver(),
+    // "OP.RT-CI");
+    // for (final String solverKey : opCiFactory.getSupportedSolverKeys()) {
+    // addCentral(experimentBuilder,
+    // opCiFactory.withSolverKey(solverKey)
+    // .withUnimprovedMsLimit(centralUnimprovedMs),
+    // "OP.RT-CI-" + solverKey);
+    // }
 
-      .addConfiguration(MASConfiguration
-        .builder(Central.solverConfiguration(
-          Opt2.builder().withObjectiveFunction(objFunc).buildSolverSupplier()))
-        .build());
+    // final long rpMs = 2500L;
+    // // final long bMs = 5L;
+    // final BidFunction bf = BidFunctions.BALANCED_HIGH;
+    // final String masSolverName =
+    // "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
 
-    final long centralUnimprovedMs = 10000L;
-    final OptaplannerSolvers.Builder opBuilder = OptaplannerSolvers.builder()
-      .withObjectiveFunction(objFunc);
-
-    addCentral(experimentBuilder, opBuilder.withFirstFitDecreasingSolver(),
-      "OP.RT-FFD");
-    for (final String solverKey : opFfdFactory.getSupportedSolverKeys()) {
-      addCentral(experimentBuilder,
-        opFfdFactory.withSolverKey(solverKey)
-          .withUnimprovedMsLimit(centralUnimprovedMs),
-        "OP.RT-FFD-" + solverKey);
-    }
-    addCentral(experimentBuilder, opBuilder.withCheapestInsertionSolver(),
-      "OP.RT-CI");
-    for (final String solverKey : opCiFactory.getSupportedSolverKeys()) {
-      addCentral(experimentBuilder,
-        opCiFactory.withSolverKey(solverKey)
-          .withUnimprovedMsLimit(centralUnimprovedMs),
-        "OP.RT-CI-" + solverKey);
-    }
-
-    final long rpMs = 2500L;
-    // final long bMs = 5L;
-    final BidFunction bf = BidFunctions.BALANCED_HIGH;
-    final String masSolverName =
-      "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
-
-    final long[] options =
-      new long[] {1L, 2L, 5L, 8L, 10L, 15L, 20L, 50L, 100L};
-
-    for (final long bMs : options) {
-      experimentBuilder.addConfiguration(
-        MASConfiguration.pdptwBuilder()
-          .setName(
-            "ReAuction-FFD-" + masSolverName + "-RP-" + rpMs + "-BID-" + bMs
-              + "-" + bf)
-          .addEventHandler(AddVehicleEvent.class,
-            DefaultTruckFactory.builder()
-              .setRoutePlanner(RtSolverRoutePlanner.supplier(
-                opFfdFactory.withSolverKey(masSolverName)
-                  .withUnimprovedMsLimit(rpMs)
-                  .withTimeMeasurementsEnabled(true)
-                  .buildRealtimeSolverSupplier()))
-              .setCommunicator(
-
-                RtSolverBidder.realtimeBuilder(objFunc,
-                  opFfdFactory.withSolverKey(masSolverName)
-                    .withUnimprovedMsLimit(bMs)
-                    .withTimeMeasurementsEnabled(true)
-                    .buildRealtimeSolverSupplier())
-                  .withBidFunction(bf)
-                  .withReauctionCooldownPeriod(0))
-              .setLazyComputation(false)
-              .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
-              .build())
-          .addModel(AuctionCommModel.builder(DoubleBid.class)
-            .withStopCondition(
-              AuctionStopConditions.and(
-                AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
-                AuctionStopConditions.<DoubleBid>or(
-                  AuctionStopConditions.<DoubleBid>allBidders(),
-                  AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
-            .withMaxAuctionDuration(30 * 60 * 1000L))
-          .addModel(AuctionTimeStatsLogger.builder())
-          .addModel(RoutePlannerStatsLogger.builder())
-          .addModel(RtSolverModel.builder()
-            .withThreadPoolSize(3)
-            .withThreadGrouping(true))
-          .addModel(RealtimeClockLogger.builder())
-          .build());
-    }
     // final int[] maxStepCounts =
     // new int[] {2500, 2750, 3000, 3250, 3500, 4000, 4500, 5000};
 
-    final String offlineSolver = "Tabu-search-value-tabu";
-    // for (final int maxStepCount : maxStepCounts) {
-    final int maxStepCount = 5000;
-    experimentBuilder.addConfiguration(
-      MASConfiguration.pdptwBuilder()
-        .addModel(Central.builder(
-          opFfdFactory.withSolverKey(offlineSolver)
-            .withUnimprovedStepCountLimit(maxStepCount)
-            .buildSolverSupplier()))
-        .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-        .setName("OP.ST-FFD-" + offlineSolver + "-SC-" + maxStepCount)
-        .build());
-    // }
+    // final String offlineSolver = "Tabu-search-value-tabu";
+    // final int maxStepCount = 5000;
+    // experimentBuilder.addConfiguration(
+    // MASConfiguration.pdptwBuilder()
+    // .addModel(Central.builder(
+    // opFfdFactory.withSolverKey(offlineSolver)
+    // .withUnimprovedStepCountLimit(maxStepCount)
+    // .buildSolverSupplier()))
+    // .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
+    // .setName("OP.ST-FFD-" + offlineSolver + "-SC-" + maxStepCount)
+    // .build());
 
-    experimentBuilder
-      .addConfiguration(
-        MASConfiguration.pdptwBuilder()
-          .addModel(
-            Central.builder(CheapestInsertionHeuristic.supplier(objFunc)))
-          .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-          .setName("simtime-rin-cih").build());
+    // experimentBuilder
+    // .addConfiguration(
+    // MASConfiguration.pdptwBuilder()
+    // .addModel(
+    // Central.builder(CheapestInsertionHeuristic.supplier(objFunc)))
+    // .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
+    // .setName("simtime-rin-cih").build());
 
     experimentBuilder
       .showGui(View.builder()
@@ -438,64 +395,87 @@ public final class PerformExperiment {
 
     System.out.println("Done, computed " + results.get().getResults().size()
       + " simulations in " + duration / 1000d + "s");
+  }
 
+  static List<MASConfiguration> masTuningRPandBmsConfigs(
+      OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
+    final List<MASConfiguration> configs = new ArrayList<>();
+    // rp unimproved ms options: 100, 250
+    final long[] rpMsOptions = new long[] {100L, 250L};
+    // bid unimproved ms options: 8, 15, 20, 25
+    final long[] bMsOptions = new long[] {8, 15, 20, 25};
+    // max auction duration 10 sec
+    final long maxAuctionDurationSoft = 10000L;
+
+    for (final long rpMs : rpMsOptions) {
+      for (final long bMs : bMsOptions) {
+        configs.add(
+          createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft));
+      }
+    }
+    return configs;
   }
 
   static List<MASConfiguration> masTuningBmsConfigs(
       OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
     final List<MASConfiguration> configs = new ArrayList<>();
-
     final long rpMs = 2500L;
-    // final long bMs = 5L;
+    final long[] bMsOptions =
+      new long[] {1L, 2L, 5L, 8L, 10L, 15L, 20L, 50L, 100L};
+    final long maxAuctionDurationSoft = 5000L;
+
+    for (final long bMs : bMsOptions) {
+      configs.add(
+        createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft));
+    }
+    return configs;
+  }
+
+  static MASConfiguration createMAS(OptaplannerSolvers.Builder opFfdFactory,
+      ObjectiveFunction objFunc, long rpMs, long bMs,
+      long maxAuctionDurationSoft) {
     final BidFunction bf = BidFunctions.BALANCED_HIGH;
     final String masSolverName =
       "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
+    return MASConfiguration.pdptwBuilder()
+      .setName(
+        "ReAuction-FFD-" + masSolverName + "-RP-" + rpMs + "-BID-" + bMs + "-"
+          + bf)
+      .addEventHandler(AddVehicleEvent.class,
+        DefaultTruckFactory.builder()
+          .setRoutePlanner(RtSolverRoutePlanner.supplier(
+            opFfdFactory.withSolverKey(masSolverName)
+              .withUnimprovedMsLimit(rpMs)
+              .withTimeMeasurementsEnabled(true)
+              .buildRealtimeSolverSupplier()))
+          .setCommunicator(
 
-    final long[] options =
-      new long[] {1L, 2L, 5L, 8L, 10L, 15L, 20L, 50L, 100L};
-
-    for (final long bMs : options) {
-      configs.add(
-        MASConfiguration.pdptwBuilder()
-          .setName(
-            "ReAuction-FFD-" + masSolverName + "-RP-" + rpMs + "-BID-" + bMs
-              + "-" + bf)
-          .addEventHandler(AddVehicleEvent.class,
-            DefaultTruckFactory.builder()
-              .setRoutePlanner(RtSolverRoutePlanner.supplier(
-                opFfdFactory.withSolverKey(masSolverName)
-                  .withUnimprovedMsLimit(rpMs)
-                  .withTimeMeasurementsEnabled(true)
-                  .buildRealtimeSolverSupplier()))
-              .setCommunicator(
-
-                RtSolverBidder.realtimeBuilder(objFunc,
-                  opFfdFactory.withSolverKey(masSolverName)
-                    .withUnimprovedMsLimit(bMs)
-                    .withTimeMeasurementsEnabled(true)
-                    .buildRealtimeSolverSupplier())
-                  .withBidFunction(bf)
-                  .withReauctionCooldownPeriod(0))
-              .setLazyComputation(false)
-              .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
-              .build())
-          .addModel(AuctionCommModel.builder(DoubleBid.class)
-            .withStopCondition(
-              AuctionStopConditions.and(
-                AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
-                AuctionStopConditions.<DoubleBid>or(
-                  AuctionStopConditions.<DoubleBid>allBidders(),
-                  AuctionStopConditions.<DoubleBid>maxAuctionDuration(5000))))
-            .withMaxAuctionDuration(30 * 60 * 1000L))
-          .addModel(AuctionTimeStatsLogger.builder())
-          .addModel(RoutePlannerStatsLogger.builder())
-          .addModel(RtSolverModel.builder()
-            .withThreadPoolSize(3)
-            .withThreadGrouping(true))
-          .addModel(RealtimeClockLogger.builder())
-          .build());
-    }
-    return configs;
+            RtSolverBidder.realtimeBuilder(objFunc,
+              opFfdFactory.withSolverKey(masSolverName)
+                .withUnimprovedMsLimit(bMs)
+                .withTimeMeasurementsEnabled(true)
+                .buildRealtimeSolverSupplier())
+              .withBidFunction(bf)
+              .withReauctionCooldownPeriod(0))
+          .setLazyComputation(false)
+          .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
+          .build())
+      .addModel(AuctionCommModel.builder(DoubleBid.class)
+        .withStopCondition(
+          AuctionStopConditions.and(
+            AuctionStopConditions.<DoubleBid>atLeastNumBids(2),
+            AuctionStopConditions.<DoubleBid>or(
+              AuctionStopConditions.<DoubleBid>allBidders(),
+              AuctionStopConditions
+                .<DoubleBid>maxAuctionDuration(maxAuctionDurationSoft))))
+        .withMaxAuctionDuration(30 * 60 * 1000L))
+      .addModel(AuctionTimeStatsLogger.builder())
+      .addModel(RoutePlannerStatsLogger.builder())
+      .addModel(RtSolverModel.builder()
+        .withThreadPoolSize(3)
+        .withThreadGrouping(true))
+      .addModel(RealtimeClockLogger.builder())
+      .build();
   }
 
   static List<MASConfiguration> rtCihOpt2Solvers(ObjectiveFunction objFunc) {
