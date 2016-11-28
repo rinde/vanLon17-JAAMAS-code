@@ -229,7 +229,7 @@ public final class PerformExperiment {
 
   enum Configurations {
 
-    MAS_TUNING_B_MS, MAS_TUNING_RP_AND_B_MS, RT_CIH_OPT2_SOLVERS;
+    MAS_TUNING_B_MS, MAS_TUNING_RP_AND_B_MS, MAS_TUNING_3_REAUCT, RT_CIH_OPT2_SOLVERS;
 
     static ImmutableList<Configurations> parse(String string) {
       final ImmutableList.Builder<Configurations> listBuilder =
@@ -295,11 +295,15 @@ public final class PerformExperiment {
 
       case MAS_TUNING_B_MS:
         experimentBuilder
-          .addConfigurations(masTuningBmsConfigs(opFfdFactory, objFunc));
+          .addConfigurations(masTuning1BmsConfigs(opFfdFactory, objFunc));
         break;
       case MAS_TUNING_RP_AND_B_MS:
         experimentBuilder
-          .addConfigurations(masTuningRPandBmsConfigs(opFfdFactory, objFunc));
+          .addConfigurations(masTuning2RPandBmsConfigs(opFfdFactory, objFunc));
+        break;
+      case MAS_TUNING_3_REAUCT:
+        experimentBuilder
+          .addConfigurations(masTuning3ReauctConfigs(opFfdFactory, objFunc));
         break;
 
       case RT_CIH_OPT2_SOLVERS:
@@ -397,7 +401,23 @@ public final class PerformExperiment {
       + " simulations in " + duration / 1000d + "s");
   }
 
-  static List<MASConfiguration> masTuningRPandBmsConfigs(
+  static List<MASConfiguration> masTuning1BmsConfigs(
+      OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
+    final List<MASConfiguration> configs = new ArrayList<>();
+    final long rpMs = 2500L;
+    final long[] bMsOptions =
+      new long[] {1L, 2L, 5L, 8L, 10L, 15L, 20L, 50L, 100L};
+    final long maxAuctionDurationSoft = 5000L;
+
+    for (final long bMs : bMsOptions) {
+      configs.add(
+        createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
+          true, 0L));
+    }
+    return configs;
+  }
+
+  static List<MASConfiguration> masTuning2RPandBmsConfigs(
       OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
     final List<MASConfiguration> configs = new ArrayList<>();
     // rp unimproved ms options: 100, 250
@@ -410,37 +430,51 @@ public final class PerformExperiment {
     for (final long rpMs : rpMsOptions) {
       for (final long bMs : bMsOptions) {
         configs.add(
-          createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft));
+          createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
+            true, 0L));
       }
     }
     return configs;
   }
 
-  static List<MASConfiguration> masTuningBmsConfigs(
+  static List<MASConfiguration> masTuning3ReauctConfigs(
       OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
     final List<MASConfiguration> configs = new ArrayList<>();
-    final long rpMs = 2500L;
-    final long[] bMsOptions =
-      new long[] {1L, 2L, 5L, 8L, 10L, 15L, 20L, 50L, 100L};
-    final long maxAuctionDurationSoft = 5000L;
+    final long rpMs = 100;
+    final long bMs = 20;
+    final long maxAuctionDurationSoft = 10000L;
 
-    for (final long bMs : bMsOptions) {
-      configs.add(
-        createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft));
-    }
+    configs.add(
+      createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
+        true, 60000L));
+
+    configs.add(
+      createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
+        false, 0L));
     return configs;
   }
 
   static MASConfiguration createMAS(OptaplannerSolvers.Builder opFfdFactory,
       ObjectiveFunction objFunc, long rpMs, long bMs,
-      long maxAuctionDurationSoft) {
+      long maxAuctionDurationSoft, boolean enableReauctions,
+      long reauctCooldownPeriodMs) {
     final BidFunction bf = BidFunctions.BALANCED_HIGH;
     final String masSolverName =
       "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
+
+    final String suffix;
+    if (false == enableReauctions) {
+      suffix = "-NO-REAUCT";
+    } else if (reauctCooldownPeriodMs > 0) {
+      suffix = "-reauctCooldownPeriod-" + reauctCooldownPeriodMs;
+    } else {
+      suffix = "";
+    }
+
     return MASConfiguration.pdptwBuilder()
       .setName(
         "ReAuction-FFD-" + masSolverName + "-RP-" + rpMs + "-BID-" + bMs + "-"
-          + bf)
+          + bf + suffix)
       .addEventHandler(AddVehicleEvent.class,
         DefaultTruckFactory.builder()
           .setRoutePlanner(RtSolverRoutePlanner.supplier(
@@ -456,7 +490,8 @@ public final class PerformExperiment {
                 .withTimeMeasurementsEnabled(true)
                 .buildRealtimeSolverSupplier())
               .withBidFunction(bf)
-              .withReauctionCooldownPeriod(0))
+              .withReauctionsEnabled(enableReauctions)
+              .withReauctionCooldownPeriod(reauctCooldownPeriodMs))
           .setLazyComputation(false)
           .setRouteAdjuster(RouteFollowingVehicle.delayAdjuster())
           .build())
