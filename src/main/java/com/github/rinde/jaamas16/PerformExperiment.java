@@ -96,9 +96,8 @@ public final class PerformExperiment {
     GENDREAU(Gendreau06ObjectiveFunction.instance()) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder()
-            .add(Paths.get(GENDREAU_DATASET))
+        bldr
+          .addScenarios(FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
             .filter("glob:**req_rapide_**"))
           .setScenarioReader(
             Functions.compose(ScenarioConverter.TO_ONLINE_REALTIME_250,
@@ -111,10 +110,8 @@ public final class PerformExperiment {
     GENDREAU_SIMULATED(Gendreau06ObjectiveFunction.instance()) {
       @Override
       void apply(Builder b) {
-        b.addScenarios(
-          FileProvider.builder()
-            .add(Paths.get(GENDREAU_DATASET))
-            .filter("glob:**req_rapide_**"))
+        b.addScenarios(FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
+          .filter("glob:**req_rapide_**"))
           .setScenarioReader(
             Functions.compose(ScenarioConverter.TO_ONLINE_SIMULATED_250,
               Gendreau06Parser.reader()))
@@ -126,9 +123,8 @@ public final class PerformExperiment {
     GENDREAU_OFFLINE(Gendreau06ObjectiveFunction.instance()) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder()
-            .add(Paths.get(GENDREAU_DATASET))
+        bldr
+          .addScenarios(FileProvider.builder().add(Paths.get(GENDREAU_DATASET))
             .filter("glob:**req_rapide_**"))
           .setScenarioReader(Functions.compose(ScenarioConverter.TO_OFFLINE,
             Gendreau06Parser.reader()))
@@ -143,10 +139,9 @@ public final class PerformExperiment {
     VAN_LON15(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder()
-            .add(Paths.get(VANLON_HOLVOET_DATASET))
-            .filter("glob:**[0-9].scen"))
+        bldr
+          .addScenarios(FileProvider.builder()
+            .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_REALTIME_250))
           .addResultListener(new VanLonHolvoetResultWriter(experimentDir,
@@ -157,10 +152,9 @@ public final class PerformExperiment {
     VAN_LON15_OFFLINE(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder()
-            .add(Paths.get(VANLON_HOLVOET_DATASET))
-            .filter("glob:**[0-9].scen"))
+        bldr
+          .addScenarios(FileProvider.builder()
+            .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_OFFLINE))
           .addResultListener(new VanLonHolvoetResultWriter(experimentDir,
@@ -171,10 +165,9 @@ public final class PerformExperiment {
     VAN_LON15_SIMULATED(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder()
-            .add(Paths.get(VANLON_HOLVOET_DATASET))
-            .filter("glob:**[0-9].scen"))
+        bldr
+          .addScenarios(FileProvider.builder()
+            .add(Paths.get(VANLON_HOLVOET_DATASET)).filter("glob:**[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_SIMULATED_250))
           .addResultListener(new VanLonHolvoetResultWriter(experimentDir,
@@ -189,10 +182,10 @@ public final class PerformExperiment {
     TIME_DEVIATION(Gendreau06ObjectiveFunction.instance(50d)) {
       @Override
       void apply(Builder bldr) {
-        bldr.addScenarios(
-          FileProvider.builder()
-            .add(Paths.get(VANLON_HOLVOET_DATASET))
-            .filter("glob:**0.50-20-10.00-[0-9].scen"))
+        bldr
+          .addScenarios(
+            FileProvider.builder().add(Paths.get(VANLON_HOLVOET_DATASET))
+              .filter("glob:**0.50-20-10.00-[0-9].scen"))
           .setScenarioReader(
             ScenarioIO.readerAdapter(ScenarioConverter.TO_ONLINE_REALTIME_250))
           .repeatSeed(10).addResultListener(new VanLonHolvoetResultWriter(
@@ -229,7 +222,7 @@ public final class PerformExperiment {
 
   enum Configurations {
 
-    MAS_TUNING_B_MS, MAS_TUNING_RP_AND_B_MS, MAS_TUNING_3_REAUCT, RT_CIH_OPT2_SOLVERS;
+    MAS_TUNING_B_MS, MAS_TUNING_RP_AND_B_MS, MAS_TUNING_3_REAUCT, RT_CIH_OPT2_SOLVERS, MAIN_CONFIGS;
 
     static ImmutableList<Configurations> parse(String string) {
       final ImmutableList.Builder<Configurations> listBuilder =
@@ -308,6 +301,10 @@ public final class PerformExperiment {
 
       case RT_CIH_OPT2_SOLVERS:
         experimentBuilder.addConfigurations(rtCihOpt2Solvers(objFunc));
+        break;
+
+      case MAIN_CONFIGS:
+        experimentBuilder.addConfigurations(mainConfigs(opFfdFactory, objFunc));
         break;
 
       }
@@ -401,6 +398,26 @@ public final class PerformExperiment {
       + " simulations in " + duration / 1000d + "s");
   }
 
+  static List<MASConfiguration> mainConfigs(
+      OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
+    final long rpMs = 100;
+    final long bMs = 20;
+    final long maxAuctionDurationSoft = 10000L;
+
+    final List<MASConfiguration> configs = new ArrayList<>();
+    configs.add(createMAS(opFfdFactory, objFunc, rpMs, bMs,
+      maxAuctionDurationSoft, true, 60000L, false));
+    final String solverKey =
+      "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
+
+    final long centralUnimprovedMs = 10000L;
+    configs.add(createCentral(
+      opFfdFactory.withSolverKey(solverKey)
+        .withUnimprovedMsLimit(centralUnimprovedMs),
+      "OP.RT-FFD-" + solverKey));
+    return configs;
+  }
+
   static List<MASConfiguration> masTuning1BmsConfigs(
       OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
     final List<MASConfiguration> configs = new ArrayList<>();
@@ -412,7 +429,7 @@ public final class PerformExperiment {
     for (final long bMs : bMsOptions) {
       configs.add(
         createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
-          true, 0L));
+          true, 0L, true));
     }
     return configs;
   }
@@ -431,7 +448,7 @@ public final class PerformExperiment {
       for (final long bMs : bMsOptions) {
         configs.add(
           createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
-            true, 0L));
+            true, 0L, true));
       }
     }
     return configs;
@@ -444,20 +461,25 @@ public final class PerformExperiment {
     final long bMs = 20;
     final long maxAuctionDurationSoft = 10000L;
 
-    configs.add(
-      createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
-        true, 60000L));
+    final long[] cooldownPeriods =
+      new long[] {60 * 1000L, 10 * 60 * 1000L, 20 * 60 * 1000L};
+
+    for (final long cooldownPeriod : cooldownPeriods) {
+      configs.add(
+        createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
+          true, cooldownPeriod, true));
+    }
 
     configs.add(
       createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
-        false, 0L));
+        false, 0L, true));
     return configs;
   }
 
   static MASConfiguration createMAS(OptaplannerSolvers.Builder opFfdFactory,
       ObjectiveFunction objFunc, long rpMs, long bMs,
       long maxAuctionDurationSoft, boolean enableReauctions,
-      long reauctCooldownPeriodMs) {
+      long reauctCooldownPeriodMs, boolean computationsLogging) {
     final BidFunction bf = BidFunctions.BALANCED_HIGH;
     final String masSolverName =
       "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
@@ -471,7 +493,7 @@ public final class PerformExperiment {
       suffix = "";
     }
 
-    return MASConfiguration.pdptwBuilder()
+    MASConfiguration.Builder b = MASConfiguration.pdptwBuilder()
       .setName(
         "ReAuction-FFD-" + masSolverName + "-RP-" + rpMs + "-BID-" + bMs + "-"
           + bf + suffix)
@@ -480,14 +502,14 @@ public final class PerformExperiment {
           .setRoutePlanner(RtSolverRoutePlanner.supplier(
             opFfdFactory.withSolverKey(masSolverName)
               .withUnimprovedMsLimit(rpMs)
-              .withTimeMeasurementsEnabled(true)
+              .withTimeMeasurementsEnabled(computationsLogging)
               .buildRealtimeSolverSupplier()))
           .setCommunicator(
 
             RtSolverBidder.realtimeBuilder(objFunc,
               opFfdFactory.withSolverKey(masSolverName)
                 .withUnimprovedMsLimit(bMs)
-                .withTimeMeasurementsEnabled(true)
+                .withTimeMeasurementsEnabled(computationsLogging)
                 .buildRealtimeSolverSupplier())
               .withBidFunction(bf)
               .withReauctionsEnabled(enableReauctions)
@@ -504,13 +526,17 @@ public final class PerformExperiment {
               AuctionStopConditions
                 .<DoubleBid>maxAuctionDuration(maxAuctionDurationSoft))))
         .withMaxAuctionDuration(30 * 60 * 1000L))
-      .addModel(AuctionTimeStatsLogger.builder())
-      .addModel(RoutePlannerStatsLogger.builder())
       .addModel(RtSolverModel.builder()
         .withThreadPoolSize(3)
         .withThreadGrouping(true))
-      .addModel(RealtimeClockLogger.builder())
-      .build();
+      .addModel(RealtimeClockLogger.builder());
+
+    if (computationsLogging) {
+      b = b.addModel(AuctionTimeStatsLogger.builder())
+        .addModel(RoutePlannerStatsLogger.builder());
+    }
+
+    return b.build();
   }
 
   static List<MASConfiguration> rtCihOpt2Solvers(ObjectiveFunction objFunc) {
@@ -527,15 +553,19 @@ public final class PerformExperiment {
 
   static void addCentral(Experiment.Builder experimentBuilder,
       OptaplannerSolvers.Builder opBuilder, String name) {
-    experimentBuilder.addConfiguration(
-      MASConfiguration.pdptwBuilder()
-        .addModel(RtCentral.builder(opBuilder.buildRealtimeSolverSupplier())
-          .withContinuousUpdates(true)
-          .withThreadGrouping(true))
-        .addModel(RealtimeClockLogger.builder())
-        .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-        .setName(name)
-        .build());
+    experimentBuilder.addConfiguration(createCentral(opBuilder, name));
+  }
+
+  static MASConfiguration createCentral(OptaplannerSolvers.Builder opBuilder,
+      String name) {
+    return MASConfiguration.pdptwBuilder()
+      .addModel(RtCentral.builder(opBuilder.buildRealtimeSolverSupplier())
+        .withContinuousUpdates(true)
+        .withThreadGrouping(true))
+      .addModel(RealtimeClockLogger.builder())
+      .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
+      .setName(name)
+      .build();
   }
 
   enum ScenarioConverter implements Function<Scenario, Scenario> {
