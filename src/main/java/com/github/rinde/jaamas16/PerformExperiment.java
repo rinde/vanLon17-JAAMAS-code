@@ -406,7 +406,7 @@ public final class PerformExperiment {
 
     final List<MASConfiguration> configs = new ArrayList<>();
     configs.add(createMAS(opFfdFactory, objFunc, rpMs, bMs,
-      maxAuctionDurationSoft, true, 60000L, false));
+      maxAuctionDurationSoft, false, 0L, false));
     final String solverKey =
       "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
 
