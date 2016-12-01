@@ -80,7 +80,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
 /**
- *
+ * This is the main class for all experiments.
  * @author Rinde van Lon
  */
 public final class PerformExperiment {
@@ -324,73 +324,13 @@ public final class PerformExperiment {
       }
     }
 
-    // experimentBuilder.addConfiguration(MASConfiguration
-    // .builder(Central.solverConfiguration(
-    // CheapestInsertionHeuristic.supplier(objFunc)))
-    // .build())
-    //
-    // .addConfiguration(MASConfiguration
-    // .builder(Central.solverConfiguration(
-    // Opt2.builder().withObjectiveFunction(objFunc).buildSolverSupplier()))
-    // .build());
-    //
-    // final long centralUnimprovedMs = 10000L;
-    // final OptaplannerSolvers.Builder opBuilder = OptaplannerSolvers.builder()
-    // .withObjectiveFunction(objFunc);
-    //
-    // addCentral(experimentBuilder, opBuilder.withFirstFitDecreasingSolver(),
-    // "OP.RT-FFD");
-    // for (final String solverKey : opFfdFactory.getSupportedSolverKeys()) {
-    // addCentral(experimentBuilder,
-    // opFfdFactory.withSolverKey(solverKey)
-    // .withUnimprovedMsLimit(centralUnimprovedMs),
-    // "OP.RT-FFD-" + solverKey);
-    // }
-    // addCentral(experimentBuilder, opBuilder.withCheapestInsertionSolver(),
-    // "OP.RT-CI");
-    // for (final String solverKey : opCiFactory.getSupportedSolverKeys()) {
-    // addCentral(experimentBuilder,
-    // opCiFactory.withSolverKey(solverKey)
-    // .withUnimprovedMsLimit(centralUnimprovedMs),
-    // "OP.RT-CI-" + solverKey);
-    // }
-
-    // final long rpMs = 2500L;
-    // // final long bMs = 5L;
-    // final BidFunction bf = BidFunctions.BALANCED_HIGH;
-    // final String masSolverName =
-    // "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
-
-    // final int[] maxStepCounts =
-    // new int[] {2500, 2750, 3000, 3250, 3500, 4000, 4500, 5000};
-
-    // final String offlineSolver = "Tabu-search-value-tabu";
-    // final int maxStepCount = 5000;
-    // experimentBuilder.addConfiguration(
-    // MASConfiguration.pdptwBuilder()
-    // .addModel(Central.builder(
-    // opFfdFactory.withSolverKey(offlineSolver)
-    // .withUnimprovedStepCountLimit(maxStepCount)
-    // .buildSolverSupplier()))
-    // .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-    // .setName("OP.ST-FFD-" + offlineSolver + "-SC-" + maxStepCount)
-    // .build());
-
-    // experimentBuilder
-    // .addConfiguration(
-    // MASConfiguration.pdptwBuilder()
-    // .addModel(
-    // Central.builder(CheapestInsertionHeuristic.supplier(objFunc)))
-    // .addEventHandler(AddVehicleEvent.class, RtCentral.vehicleHandler())
-    // .setName("simtime-rin-cih").build());
-
     experimentBuilder
       .showGui(View.builder()
         .withAutoPlay()
         .withAutoClose()
         .withSpeedUp(128)
         // .withFullScreen()
-        .withTitleAppendix("JAAMAS 2016 Experiment")
+        .withTitleAppendix("JAAMAS 2017 Experiment")
         .with(RoadUserRenderer.builder().withToStringLabel())
         .with(RouteRenderer.builder())
         .with(PDPModelRenderer.builder())
