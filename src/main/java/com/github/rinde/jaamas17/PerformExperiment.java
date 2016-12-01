@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.jaamas16;
+package com.github.rinde.jaamas17;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verifyNotNull;
@@ -89,6 +89,8 @@ public final class PerformExperiment {
   static final String VANLON_HOLVOET_DATASET = "files/vanLonHolvoet15/";
   static final String GENDREAU_DATASET = "files/gendreau2006/requests";
   static final String RESULTS_MAIN_DIR = "files/results/";
+
+  private static final long CENTRAL_UNIMPROVED_MS = 10000L;
 
   private PerformExperiment() {}
 
@@ -222,7 +224,7 @@ public final class PerformExperiment {
 
   enum Configurations {
 
-    MAS_TUNING_B_MS, MAS_TUNING_RP_AND_B_MS, MAS_TUNING_3_REAUCT, RT_CIH_OPT2_SOLVERS, MAIN_CONFIGS;
+    MAS_TUNING_B_MS, MAS_TUNING_RP_AND_B_MS, MAS_TUNING_3_REAUCT, RT_CIH_OPT2_SOLVERS, MAIN_CONFIGS, OPTAPLANNER_TUNING, OPTAPLANNER_SENSITIVITY;
 
     static ImmutableList<Configurations> parse(String string) {
       final ImmutableList.Builder<Configurations> listBuilder =
@@ -263,11 +265,11 @@ public final class PerformExperiment {
 
     final OptaplannerSolvers.Builder opFfdFactory =
       OptaplannerSolvers.builder().withSolverFromBenchmark(
-        "com/github/rinde/jaamas16/firstFitDecreasingBenchmark.xml")
+        "com/github/rinde/jaamas17/firstFitDecreasingBenchmark.xml")
         .withObjectiveFunction(objFunc);
     final OptaplannerSolvers.Builder opCiFactory =
       OptaplannerSolvers.builder().withSolverFromBenchmark(
-        "com/github/rinde/jaamas16/cheapestInsertionBenchmark.xml")
+        "com/github/rinde/jaamas17/cheapestInsertionBenchmark.xml")
         .withObjectiveFunction(objFunc);
 
     final long time = System.currentTimeMillis();
@@ -286,14 +288,26 @@ public final class PerformExperiment {
     for (final Configurations config : configs) {
       switch (config) {
 
+      case OPTAPLANNER_TUNING:
+        experimentBuilder.addConfigurations(
+          optaplannerTuningConfigs(opFfdFactory, opCiFactory, objFunc));
+        break;
+
+      case OPTAPLANNER_SENSITIVITY:
+        experimentBuilder.addConfigurations(
+          optaplannerSensitivityConfigs(opFfdFactory, opCiFactory, objFunc));
+        break;
+
       case MAS_TUNING_B_MS:
         experimentBuilder
           .addConfigurations(masTuning1BmsConfigs(opFfdFactory, objFunc));
         break;
+
       case MAS_TUNING_RP_AND_B_MS:
         experimentBuilder
           .addConfigurations(masTuning2RPandBmsConfigs(opFfdFactory, objFunc));
         break;
+
       case MAS_TUNING_3_REAUCT:
         experimentBuilder
           .addConfigurations(masTuning3ReauctConfigs(opFfdFactory, objFunc));
@@ -415,6 +429,53 @@ public final class PerformExperiment {
       opFfdFactory.withSolverKey(solverKey)
         .withUnimprovedMsLimit(centralUnimprovedMs),
       "OP.RT-FFD-" + solverKey));
+    return configs;
+  }
+
+  static List<MASConfiguration> optaplannerTuningConfigs(
+      OptaplannerSolvers.Builder opFfdFactory,
+      OptaplannerSolvers.Builder opCiFactory, ObjectiveFunction objFunc) {
+
+    final List<MASConfiguration> configs = new ArrayList<>();
+
+    final OptaplannerSolvers.Builder opBuilder = OptaplannerSolvers.builder()
+      .withObjectiveFunction(objFunc);
+
+    configs.add(createCentral(opBuilder.withFirstFitDecreasingSolver(),
+      "OP.RT-FFD"));
+    for (final String solverKey : opFfdFactory.getSupportedSolverKeys()) {
+      configs.add(createCentral(opFfdFactory.withSolverKey(solverKey)
+        .withUnimprovedMsLimit(CENTRAL_UNIMPROVED_MS),
+        "OP.RT-FFD-" + solverKey));
+    }
+    configs.add(createCentral(opBuilder.withCheapestInsertionSolver(),
+      "OP.RT-CI"));
+    for (final String solverKey : opCiFactory.getSupportedSolverKeys()) {
+      configs.add(createCentral(opCiFactory.withSolverKey(solverKey)
+        .withUnimprovedMsLimit(CENTRAL_UNIMPROVED_MS),
+        "OP.RT-CI-" + solverKey));
+    }
+    return configs;
+  }
+
+  static List<MASConfiguration> optaplannerSensitivityConfigs(
+      OptaplannerSolvers.Builder opFfdFactory,
+      OptaplannerSolvers.Builder opCiFactory, ObjectiveFunction objFunc) {
+    final OptaplannerSolvers.Builder opBuilder = OptaplannerSolvers.builder()
+      .withObjectiveFunction(objFunc);
+
+    System.out.println(opFfdFactory.getSupportedSolverKeys());
+
+    final List<MASConfiguration> configs = new ArrayList<>();
+    configs.add(createCentral(opBuilder.withFirstFitDecreasingSolver(),
+      "OP.RT-first-fit-decreasing"));
+    configs.add(createCentral(opBuilder.withCheapestInsertionSolver(),
+      "OP.RT-cheapest-insertion"));
+    configs
+      .add(createCentral(opFfdFactory.withSolverKey("Tabu-search-entity-tabu")
+        .withUnimprovedMsLimit(CENTRAL_UNIMPROVED_MS),
+        "OP.RT-first-fit-decreasing-with-tabu"));
+
     return configs;
   }
 

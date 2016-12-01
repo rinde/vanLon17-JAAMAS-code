@@ -2,12 +2,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.rinde</groupId>
-	<artifactId>jaamas16</artifactId>
+	<artifactId>jaamas17</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
-	<name>JAAMAS'16 code</name>
+	<name>JAAMAS'17 code</name>
 	<description></description>
-	<url>https://github.com/rinde/vanLon16-JAAMAS-code</url>
+	<url>https://github.com/rinde/vanLon17-JAAMAS-code</url>
 	<inceptionYear>2015</inceptionYear>
 
 	<licenses>

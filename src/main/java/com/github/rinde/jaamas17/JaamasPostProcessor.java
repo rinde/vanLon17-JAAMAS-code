@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.jaamas16;
+package com.github.rinde.jaamas17;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
 import javax.annotation.Nullable;
 
-import com.github.rinde.jaamas16.PerformExperiment.AuctionStats;
+import com.github.rinde.jaamas17.PerformExperiment.AuctionStats;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel.AuctionEvent;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionTimeStatsLogger;

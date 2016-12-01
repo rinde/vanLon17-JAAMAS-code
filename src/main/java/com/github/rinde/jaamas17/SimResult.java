@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.jaamas16;
+package com.github.rinde.jaamas17;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -23,7 +23,7 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.github.rinde.jaamas16.PerformExperiment.AuctionStats;
+import com.github.rinde.jaamas17.PerformExperiment.AuctionStats;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel.AuctionEvent;
 import com.github.rinde.logistics.pdptw.mas.comm.Bidder;
 import com.github.rinde.logistics.pdptw.mas.route.RoutePlanner;

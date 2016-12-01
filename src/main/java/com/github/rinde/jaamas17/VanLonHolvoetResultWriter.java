@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.jaamas16;
+package com.github.rinde.jaamas17;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import com.github.rinde.jaamas16.SimResult.TimeMeasurements;
 import com.github.rinde.logistics.pdptw.mas.comm.AuctionCommModel.AuctionEvent;
+import com.github.rinde.jaamas17.SimResult.TimeMeasurements;
 import com.github.rinde.logistics.pdptw.mas.comm.Bidder;
 import com.github.rinde.logistics.pdptw.mas.route.RoutePlanner;
 import com.github.rinde.rinsim.central.SolverTimeMeasurement;

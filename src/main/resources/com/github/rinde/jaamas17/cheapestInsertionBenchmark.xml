@@ -6,7 +6,7 @@
 
 	<inheritedSolverBenchmark>
 		<problemBenchmarks>
-			<solutionFileIOClass>com.github.rinde.jaamas16.OptaplannerGendreauIO</solutionFileIOClass>
+			<solutionFileIOClass>com.github.rinde.jaamas17.OptaplannerGendreauIO</solutionFileIOClass>
 			<inputSolutionFile>files/gendreau2006/requests/req_rapide_1_240_24</inputSolutionFile>
 		</problemBenchmarks>
 		<solver>

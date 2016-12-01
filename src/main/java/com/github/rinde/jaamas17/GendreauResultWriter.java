@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.jaamas16;
+package com.github.rinde.jaamas17;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-import com.github.rinde.jaamas16.MeasureGendreau.Property;
+import com.github.rinde.jaamas17.MeasureGendreau.Property;
 import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
 import com.google.common.base.Charsets;

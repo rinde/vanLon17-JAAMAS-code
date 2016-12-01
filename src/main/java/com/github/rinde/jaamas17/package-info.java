@@ -18,4 +18,4 @@
  *
  */
 @javax.annotation.ParametersAreNonnullByDefault
-package com.github.rinde.jaamas16;
+package com.github.rinde.jaamas17;

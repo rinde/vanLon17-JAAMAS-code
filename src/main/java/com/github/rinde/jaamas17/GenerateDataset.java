@@ -13,31 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.jaamas16;
+package com.github.rinde.jaamas17;
 
-import org.optaplanner.benchmark.api.PlannerBenchmark;
-import org.optaplanner.benchmark.api.PlannerBenchmarkFactory;
+import static java.util.Arrays.asList;
+
+import com.github.rinde.datgen.pdptw.DatasetGenerator;
 
 /**
  *
  * @author Rinde van Lon
  */
-public final class OfflineOptaplannerBenchmark {
+public final class GenerateDataset {
 
-  private OfflineOptaplannerBenchmark() {}
+  private GenerateDataset() {}
 
   /**
    * @param args Ignored.
    */
   public static void main(String[] args) {
-    final PlannerBenchmarkFactory plannerBenchmarkFactory =
-      PlannerBenchmarkFactory.createFromFreemarkerXmlResource(
-        "com/github/rinde/jaamas16/benchmarkConfig.xml");
+    final long time = System.currentTimeMillis();
+    final DatasetGenerator generator = DatasetGenerator.builder()
+      .setDatasetDir("files/dataset/")
+      .setDynamismLevels(asList(.2, .5, .8))
+      .setUrgencyLevels(asList(5L, 20L, 35L))
+      .setScaleLevels(asList(1d, 5d, 10d))
+      .setNumInstances(10)
+      .build();
 
-    final PlannerBenchmark plannerBenchmark =
-      plannerBenchmarkFactory.buildPlannerBenchmark();
-
-    plannerBenchmark.benchmark();
+    generator.generate();
+    final long duration = System.currentTimeMillis() - time;
+    System.out.println("Done, in " + duration / 1000d + "s");
 
   }
 

@@ -1,5 +1,5 @@
 export MAVEN_OPTS=-server
-nohup mvn clean compile -U exec:java -Dexec.mainClass="com.github.rinde.jaamas16.PerformExperiment" -Dexec.args="-exp \
+nohup mvn clean compile -U exec:java -Dexec.mainClass="com.github.rinde.jaamas17.PerformExperiment" -Dexec.args="-exp \
 vanlon15 \
 MAIN_CONFIGS \
 --show-gui false \
