@@ -10,7 +10,7 @@ Since the paper is part of a long term research effort, the code used for the ex
 
 ### In this repository
 
-This repository contains several scripts that can be used to execute each experiment conducted for this paper: 
+This repository contains several scripts that can be used to execute each experiment conducted for this paper. Maven and Java 7 (or higher) are required.
 
 | Purpose of script        							| Prerequisites 																		| Command 
 | ------------- 									| -------------																			| -------------
@@ -23,14 +23,13 @@ This repository contains several scripts that can be used to execute each experi
 | MAS tuning part 3 								| Requires the MAS tuning dataset, either generate it, or download it here ..			| ```./mas-tuning3.sh``` 
 | OptaPlanner tuning on Gendreau dataset 			| Requires the Gendreau dataset, download it here ..									| ```./optaplanner-tuning.sh``` 
 
-
-
 ### Dependencies
+
+All dependencies are imported via Maven but can also be downloaded manually.
 
 | Library										| Description																									| Version		| DOI
 | -------------									| ------------- 																								| ------------- | -------------
-| [RinSim](https://github.com/rinde/RinSim)		| Real-time logistics simulator																					| 4.3.0		    |
-| [RinLog](https://github.com/rinde/RinLog)		| Collection of algorithms, including DynCNET multi-agent system and OptaPlanner for dynamic PDPTW problems		| 3.2.0         |
+| [RinSim](https://github.com/rinde/RinSim)		| Real-time logistics simulator																					| 4.3.0		    | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.192106.svg)](https://doi.org/10.5281/zenodo.192106)
+| [RinLog](https://github.com/rinde/RinLog)		| Collection of algorithms, including DynCNET multi-agent system and OptaPlanner for dynamic PDPTW problems		| 3.2.0         | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.192111.svg)](https://doi.org/10.5281/zenodo.192111)
+| [PDPTW Dataset Generator](https://github.com/rinde/pdptw-dataset-generator)	| Generator of PDPTW datasets.													| 1.1.0			| [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.59259.svg)](https://doi.org/10.5281/zenodo.59259)
 
-
-### How to run
