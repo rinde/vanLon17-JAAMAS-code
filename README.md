@@ -25,7 +25,7 @@ This repository contains several scripts that can be used to execute each experi
 
 ### Dependencies
 
-All dependencies are imported via Maven but can also be downloaded manually.
+All dependencies are imported via Maven but can also be downloaded manually. The following dependencies are especially relevant:
 
 | Library										| Description																									| Version		| DOI
 | -------------									| ------------- 																								| ------------- | -------------
