@@ -12,21 +12,25 @@ Since the paper is part of a long term research effort, the code used for the ex
 
 This repository contains several scripts that can be used to execute each experiment conducted for this paper: 
 
-| Purpose of script        							| Command |
-| ------------- 									|-------------| 
-| Generate main dataset     						| ```./generate-main-dataset.sh``` | 
-| Perform main experiment    						| ```./main-experiment.sh``` |
-| Real-time reliability (sensitivity) experiment 	| ```./sensitivity-experiment.sh``` |
-| Generate MAS tuning dataset 						|  ```./generate-mas-tuning-dataset.sh``` | 
-| MAS tuning part 1 								| ```./mas-tuning1.sh``` |
-| MAS tuning part 2 								| ```./mas-tuning2.sh``` |
-| MAS tuning part 3 								| ```./mas-tuning3.sh``` |
-| OptaPlanner tuning on Gendreau dataset 			| ```./optaplanner-tuning.sh``` |
+| Purpose of script        							| Prerequisites 																		| Command 
+| ------------- 									| -------------																			| -------------
+| Generate main dataset     						| 																						| ```./generate-main-dataset.sh``` 
+| Perform main experiment    						| Requires the main dataset, either generate it or download it here ..					| ```./main-experiment.sh``` 
+| Real-time reliability (sensitivity) experiment 	| Requires the main dataset, either generate it or download it here ..					| ```./sensitivity-experiment.sh``` 
+| Generate MAS tuning dataset 						|																						| ```./generate-mas-tuning-dataset.sh``` 
+| MAS tuning part 1 								| Requires the MAS tuning dataset, either generate it, or download it here ..			| ```./mas-tuning1.sh``` 
+| MAS tuning part 2 								| Requires the MAS tuning dataset, either generate it, or download it here ..			| ```./mas-tuning2.sh``` 
+| MAS tuning part 3 								| Requires the MAS tuning dataset, either generate it, or download it here ..			| ```./mas-tuning3.sh``` 
+| OptaPlanner tuning on Gendreau dataset 			| Requires the Gendreau dataset, download it here ..									| ```./optaplanner-tuning.sh``` 
 
 
-One can also use the generated files as described in the next section.
 
 ### Dependencies
+
+| Library										| Description																									| Version		| DOI
+| -------------									| ------------- 																								| ------------- | -------------
+| [RinSim](https://github.com/rinde/RinSim)		| Real-time logistics simulator																					| 4.3.0		    |
+| [RinLog](https://github.com/rinde/RinLog)		| Collection of algorithms, including DynCNET multi-agent system and OptaPlanner for dynamic PDPTW problems		| 3.2.0         |
 
 
 ### How to run
