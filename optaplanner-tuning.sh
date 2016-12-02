@@ -1,5 +1,5 @@
 export MAVEN_OPTS=-server
-nohup mvn exec:java -Dexec.mainClass="com.github.rinde.jaamas16.PerformExperiment" -Dexec.args="-exp \
+nohup mvn exec:java -Dexec.mainClass="com.github.rinde.jaamas17.PerformExperiment" -Dexec.args="-exp \
 gendreau \
 OPTAPLANNER_TUNING \
 --show-gui false \

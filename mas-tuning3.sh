@@ -1,5 +1,5 @@
 export MAVEN_OPTS='-server -Xmx25000m'
-nohup mvn clean compile -U exec:java -Dexec.mainClass="com.github.rinde.jaamas16.PerformExperiment" -Dexec.args="-exp \
+nohup mvn clean compile -U exec:java -Dexec.mainClass="com.github.rinde.jaamas17.PerformExperiment" -Dexec.args="-exp \
 vanlon15 \
 MAS_TUNING_3_REAUCT \
 --show-gui false \

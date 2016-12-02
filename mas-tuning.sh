@@ -1,7 +1,8 @@
 export MAVEN_OPTS='-server -Xmx25000m'
-nohup mvn clean compile -U exec:java -Dexec.mainClass="com.github.rinde.jaamas16.PerformExperiment" -Dexec.args="-exp vanlon15 \
+nohup mvn clean compile -U exec:java -Dexec.mainClass="com.github.rinde.jaamas17.PerformExperiment" -Dexec.args="-exp vanlon15 \
+MAS_TUNING_B_MS \
 --show-gui false \
---include c32,..,c40 -r 1 \
+--repetitions 1 \
 --scenarios.exclude p0 \
 --scenarios.add files/tuning-dataset/ \
 --scenarios.filter glob:**.scen \
