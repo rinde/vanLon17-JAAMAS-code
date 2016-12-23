@@ -4,6 +4,8 @@ This repository contains the code that was used to perform the experiments descr
 
  > *When do agents outperform centralized algorithms? - A systematic empirical evaluation in logistics.* Rinde R.S. van Lon and Tom Holvoet. Journal of Autonomous Agents and Multi-Agent Systems (2017).
 
+This repository is archived on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.220892.svg)](https://doi.org/10.5281/zenodo.220892)
+
 The datasets and results belonging to this paper can be found in one big zip file, at this location: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.209760.svg)](https://doi.org/10.5281/zenodo.209760)
 
 ## Overview
