@@ -224,7 +224,7 @@ public final class PerformExperiment {
 
   enum Configurations {
 
-    MAS_TUNING_B_MS, MAS_TUNING_RP_AND_B_MS, MAS_TUNING_3_REAUCT, RT_CIH_OPT2_SOLVERS, MAIN_CONFIGS, OPTAPLANNER_TUNING, OPTAPLANNER_SENSITIVITY;
+    MAS_TUNING_B_MS, MAS_TUNING_RP_AND_B_MS, MAS_TUNING_3_REAUCT, RT_CIH_OPT2_SOLVERS, MAIN_CONFIGS, OPTAPLANNER_TUNING, OPTAPLANNER_SENSITIVITY, THREADS_TEST;
 
     static ImmutableList<Configurations> parse(String string) {
       final ImmutableList.Builder<Configurations> listBuilder =
@@ -319,6 +319,11 @@ public final class PerformExperiment {
 
       case MAIN_CONFIGS:
         experimentBuilder.addConfigurations(mainConfigs(opFfdFactory, objFunc));
+        break;
+
+      case THREADS_TEST:
+        experimentBuilder
+          .addConfigurations(threadsConfigs(opFfdFactory, objFunc));
         break;
 
       }
@@ -435,6 +440,20 @@ public final class PerformExperiment {
     return configs;
   }
 
+  static List<MASConfiguration> threadsConfigs(
+      OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
+    final long rpMs = 100;
+    final long bMs = 20;
+    final long maxAuctionDurationSoft = 10000L;
+
+    final List<MASConfiguration> configs = new ArrayList<>();
+    for (final int numThreads : new int[] {1, 3, 5}) {
+      configs.add(createMAS(opFfdFactory, objFunc, rpMs, bMs,
+        maxAuctionDurationSoft, false, 0L, false, numThreads));
+    }
+    return configs;
+  }
+
   static List<MASConfiguration> masTuning2RPandBmsConfigs(
       OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
     final List<MASConfiguration> configs = new ArrayList<>();
@@ -481,17 +500,30 @@ public final class PerformExperiment {
       ObjectiveFunction objFunc, long rpMs, long bMs,
       long maxAuctionDurationSoft, boolean enableReauctions,
       long reauctCooldownPeriodMs, boolean computationsLogging) {
+    return createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
+      enableReauctions, reauctCooldownPeriodMs, computationsLogging, 3);
+  }
+
+  static MASConfiguration createMAS(OptaplannerSolvers.Builder opFfdFactory,
+      ObjectiveFunction objFunc, long rpMs, long bMs,
+      long maxAuctionDurationSoft, boolean enableReauctions,
+      long reauctCooldownPeriodMs, boolean computationsLogging,
+      int numThreads) {
     final BidFunction bf = BidFunctions.BALANCED_HIGH;
     final String masSolverName =
       "Step-counting-hill-climbing-with-entity-tabu-and-strategic-oscillation";
 
-    final String suffix;
+    String suffix;
     if (false == enableReauctions) {
       suffix = "-NO-REAUCT";
     } else if (reauctCooldownPeriodMs > 0) {
       suffix = "-reauctCooldownPeriod-" + reauctCooldownPeriodMs;
     } else {
       suffix = "";
+    }
+
+    if (numThreads != 3) {
+      suffix += "-" + numThreads + "threads";
     }
 
     MASConfiguration.Builder b = MASConfiguration.pdptwBuilder()
@@ -528,7 +560,7 @@ public final class PerformExperiment {
                 .<DoubleBid>maxAuctionDuration(maxAuctionDurationSoft))))
         .withMaxAuctionDuration(30 * 60 * 1000L))
       .addModel(RtSolverModel.builder()
-        .withThreadPoolSize(3)
+        .withThreadPoolSize(numThreads)
         .withThreadGrouping(true))
       .addModel(RealtimeClockLogger.builder());
 
@@ -603,16 +635,17 @@ public final class PerformExperiment {
       public Scenario apply(Scenario input) {
         final Scenario s = ScenarioConverters
           .eventConverter(new Function<TimedEvent, TimedEvent>() {
-          @Override
-          public TimedEvent apply(TimedEvent input) {
-            if (input instanceof AddParcelEvent) {
-              return AddParcelEvent
-                .create(Parcel.builder(((AddParcelEvent) input).getParcelDTO())
-                  .orderAnnounceTime(-1).buildDTO());
+            @Override
+            public TimedEvent apply(TimedEvent input) {
+              if (input instanceof AddParcelEvent) {
+                return AddParcelEvent
+                  .create(
+                    Parcel.builder(((AddParcelEvent) input).getParcelDTO())
+                      .orderAnnounceTime(-1).buildDTO());
+              }
+              return input;
             }
-            return input;
-          }
-        }).apply(input);
+          }).apply(input);
         return Scenario.builder(s)
           .removeModelsOfType(TimeModel.AbstractBuilder.class)
           .addModel(TimeModel.builder().withTickLength(250))
