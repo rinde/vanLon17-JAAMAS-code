@@ -501,7 +501,7 @@ public final class PerformExperiment {
       long maxAuctionDurationSoft, boolean enableReauctions,
       long reauctCooldownPeriodMs, boolean computationsLogging) {
     return createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
-      enableReauctions, reauctCooldownPeriodMs, computationsLogging, 3);
+      enableReauctions, reauctCooldownPeriodMs, computationsLogging, 1);
   }
 
   static MASConfiguration createMAS(OptaplannerSolvers.Builder opFfdFactory,
@@ -522,9 +522,7 @@ public final class PerformExperiment {
       suffix = "";
     }
 
-    if (numThreads != 3) {
-      suffix += "-" + numThreads + "threads";
-    }
+    suffix += "-" + numThreads + "thread" + (numThreads > 1 ? "s" : "");
 
     MASConfiguration.Builder b = MASConfiguration.pdptwBuilder()
       .setName(
