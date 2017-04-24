@@ -427,7 +427,7 @@ public final class PerformExperiment {
   static List<MASConfiguration> masTuning1BmsConfigs(
       OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
     final List<MASConfiguration> configs = new ArrayList<>();
-    final long rpMs = 2500L;
+    final long rpMs = 250L;
     final long[] bMsOptions =
       new long[] {1L, 2L, 5L, 8L, 10L, 15L, 20L, 50L, 100L};
     final long maxAuctionDurationSoft = 5000L;
@@ -556,7 +556,7 @@ public final class PerformExperiment {
               AuctionStopConditions.<DoubleBid>allBidders(),
               AuctionStopConditions
                 .<DoubleBid>maxAuctionDuration(maxAuctionDurationSoft))))
-        .withMaxAuctionDuration(4 * 60 * 60 * 1000L))
+        .withMaxAuctionDuration(30 * 60 * 1000L))
       .addModel(RtSolverModel.builder()
         .withThreadPoolSize(numThreads)
         .withThreadGrouping(true))
