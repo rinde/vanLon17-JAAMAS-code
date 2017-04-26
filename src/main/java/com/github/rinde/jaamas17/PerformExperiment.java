@@ -435,7 +435,7 @@ public final class PerformExperiment {
     for (final long bMs : bMsOptions) {
       configs.add(
         createMAS(opFfdFactory, objFunc, rpMs, bMs, maxAuctionDurationSoft,
-          true, 0L, true));
+          true, 1000L, true));
     }
     return configs;
   }
@@ -533,7 +533,7 @@ public final class PerformExperiment {
           .setRoutePlanner(RtSolverRoutePlanner.supplier(
             opFfdFactory.withSolverKey(masSolverName)
               .withUnimprovedMsLimit(rpMs)
-              .withMsSpentLimit(rpMs * 10)
+              // .withMsSpentLimit(rpMs * 10)
               .withTimeMeasurementsEnabled(computationsLogging)
               .buildRealtimeSolverSupplier()))
           .setCommunicator(
@@ -541,7 +541,7 @@ public final class PerformExperiment {
             RtSolverBidder.realtimeBuilder(objFunc,
               opFfdFactory.withSolverKey(masSolverName)
                 .withUnimprovedMsLimit(bMs)
-                .withMsSpentLimit(bMs * 10)
+                // .withMsSpentLimit(bMs * 10)
                 .withTimeMeasurementsEnabled(computationsLogging)
                 .buildRealtimeSolverSupplier())
               .withBidFunction(bf)
@@ -558,7 +558,7 @@ public final class PerformExperiment {
               AuctionStopConditions.<DoubleBid>allBidders(),
               AuctionStopConditions
                 .<DoubleBid>maxAuctionDuration(maxAuctionDurationSoft))))
-        .withMaxAuctionDuration(15 * 60 * 1000L))
+        .withMaxAuctionDuration(2 * 60 * 1000L))
       .addModel(RtSolverModel.builder()
         .withThreadPoolSize(numThreads)
         .withThreadGrouping(true))
