@@ -533,6 +533,7 @@ public final class PerformExperiment {
           .setRoutePlanner(RtSolverRoutePlanner.supplier(
             opFfdFactory.withSolverKey(masSolverName)
               .withUnimprovedMsLimit(rpMs)
+              .withMsSpentLimit(rpMs * 10)
               .withTimeMeasurementsEnabled(computationsLogging)
               .buildRealtimeSolverSupplier()))
           .setCommunicator(
@@ -540,6 +541,7 @@ public final class PerformExperiment {
             RtSolverBidder.realtimeBuilder(objFunc,
               opFfdFactory.withSolverKey(masSolverName)
                 .withUnimprovedMsLimit(bMs)
+                .withMsSpentLimit(bMs * 10)
                 .withTimeMeasurementsEnabled(computationsLogging)
                 .buildRealtimeSolverSupplier())
               .withBidFunction(bf)
@@ -556,7 +558,7 @@ public final class PerformExperiment {
               AuctionStopConditions.<DoubleBid>allBidders(),
               AuctionStopConditions
                 .<DoubleBid>maxAuctionDuration(maxAuctionDurationSoft))))
-        .withMaxAuctionDuration(2 * 60 * 1000L))
+        .withMaxAuctionDuration(15 * 60 * 1000L))
       .addModel(RtSolverModel.builder()
         .withThreadPoolSize(numThreads)
         .withThreadGrouping(true))
