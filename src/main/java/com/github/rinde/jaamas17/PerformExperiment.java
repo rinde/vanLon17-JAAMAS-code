@@ -556,7 +556,7 @@ public final class PerformExperiment {
               AuctionStopConditions.<DoubleBid>allBidders(),
               AuctionStopConditions
                 .<DoubleBid>maxAuctionDuration(maxAuctionDurationSoft))))
-        .withMaxAuctionDuration(60 * 60 * 1000L))
+        .withMaxAuctionDuration(2 * 60 * 1000L))
       .addModel(RtSolverModel.builder()
         .withThreadPoolSize(numThreads)
         .withThreadGrouping(true))
