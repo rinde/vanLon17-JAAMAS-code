@@ -459,8 +459,8 @@ public final class PerformExperiment {
     final List<MASConfiguration> configs = new ArrayList<>();
     // rp unimproved ms options: 100, 250
     final long[] rpMsOptions = new long[] {100L, 250L};
-    // bid unimproved ms options: 8, 15, 20, 25
-    final long[] bMsOptions = new long[] {8, 15, 20, 25};
+    // bid unimproved ms options: 8, 10, 15, 20
+    final long[] bMsOptions = new long[] {8, 10, 15, 20};
     // max auction duration 10 sec
     final long maxAuctionDurationSoft = 10000L;
 
