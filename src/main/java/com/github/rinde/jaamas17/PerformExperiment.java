@@ -478,7 +478,7 @@ public final class PerformExperiment {
       OptaplannerSolvers.Builder opFfdFactory, ObjectiveFunction objFunc) {
     final List<MASConfiguration> configs = new ArrayList<>();
     final long rpMs = 100;
-    final long bMs = 20;
+    final long bMs = 15;
     final long maxAuctionDurationSoft = 10000L;
 
     final long[] cooldownPeriods =
