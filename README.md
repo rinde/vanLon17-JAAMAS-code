@@ -6,6 +6,8 @@ This repository contains the code that was used to perform the experiments descr
 
 This is version v1.1.0.
 
+The code in this repository is archived at Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.576389.svg)](https://doi.org/10.5281/zenodo.576389)
+
 The datasets and results belonging to this paper can be found in one big zip file, at this location: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.576345.svg)](https://doi.org/10.5281/zenodo.576345)
 
 ## Overview
