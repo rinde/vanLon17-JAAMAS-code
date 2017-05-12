@@ -4,9 +4,9 @@ This repository contains the code that was used to perform the experiments descr
 
  > *When do agents outperform centralized algorithms? - A systematic empirical evaluation in logistics.* Rinde R.S. van Lon and Tom Holvoet. Journal of Autonomous Agents and Multi-Agent Systems (2017).
 
-This repository is archived on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.220892.svg)](https://doi.org/10.5281/zenodo.220892)
+This is version v1.1.0.
 
-The datasets and results belonging to this paper can be found in one big zip file, at this location: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.209760.svg)](https://doi.org/10.5281/zenodo.209760)
+The datasets and results belonging to this paper can be found in one big zip file, at this location: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.576345.svg)](https://doi.org/10.5281/zenodo.576345)
 
 ## Overview
 
@@ -34,7 +34,7 @@ All dependencies are imported via Maven but can also be downloaded manually. The
 | Library										| Description																									| Version		| DOI
 | -------------									| ------------- 																								| ------------- | -------------
 | [RinSim](https://github.com/rinde/RinSim)		| Real-time logistics simulator.																				| [4.3.0](https://github.com/rinde/RinSim/releases/tag/v4.3.0)		    | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.192106.svg)](https://doi.org/10.5281/zenodo.192106)
-| [RinLog](https://github.com/rinde/RinLog)		| Collection of algorithms, including DynCNET multi-agent system and OptaPlanner for dynamic PDPTW problems.	| [3.2.0](https://github.com/rinde/RinLog/releases/tag/v3.2.0)         | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.192111.svg)](https://doi.org/10.5281/zenodo.192111)
+| [RinLog](https://github.com/rinde/RinLog)		| Collection of algorithms, including DynCNET multi-agent system and OptaPlanner for dynamic PDPTW problems.	| [3.2.2](https://github.com/rinde/RinLog/releases/tag/v3.2.2)         | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.571180.svg)](https://doi.org/10.5281/zenodo.571180)
 | [PDPTW Dataset Generator](https://github.com/rinde/pdptw-dataset-generator)	| Generator of PDPTW datasets.													| [1.1.0](https://github.com/rinde/pdptw-dataset-generator/releases/tag/v1.1.0)			| [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.59259.svg)](https://doi.org/10.5281/zenodo.59259)
 
 

@@ -27,13 +27,13 @@
 	<logger name="com.github.rinde.rinsim.scenario" level="WARN" />
 	<logger name="com.github.rinde.logistics" level="WARN" />
 	<logger name="com.github.rinde.jaamas16" level="INFO" />
-	<logger name="com.github.rinde.logistics.pdptw.solver.optaplanner" level="WARN" />
-	<logger name="org.optaplanner" level="WARN" />
+	<logger name="com.github.rinde.logistics.pdptw.solver.optaplanner" level="TRACE" />
+	<logger name="org.optaplanner" level="TRACE" />
 
 	<root level="INFO">
 		<appender-ref ref="STDOUT" />
 	</root>
-	<!-- <root level="INFO">
+	<root level="INFO">
 		<appender-ref ref="FILE" />
-	</root> -->
+	</root>
 </configuration>
